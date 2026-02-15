@@ -1,0 +1,261 @@
+service,version,port,os_guess,banner,exploit_age_days,prev_success_rate,label
+ssh,7.2,22,Ubuntu 20.04,OpenSSH_7.2p2 Ubuntu,1173,0.74,0
+ssh,8.2,22,Linux,OpenSSH_7.2p2 Ubuntu,1935,0.51,1
+https,1.20.1,443,Windows Server 2016,Apache httpd 2.4.50 OpenSSL,6246,0.81,0
+postgresql,12.3,5432,Windows Server 2016,PostgreSQL 11.8,789,0.38,0
+postgresql,12.3,5432,Debian 11,PostgreSQL 11.8,3130,0.08,0
+postgresql,11.8,5432,Linux,PostgreSQL 11.8,6362,0.29,0
+https,2.4.50,443,Debian 11,nginx 1.20.1 TLS,1362,0.37,1
+smb,3.0.20,445,Ubuntu 20.04,Samba smbd 3.0.20,1368,0.46,1
+https,1.20.1,443,Linux,Apache httpd 2.4.50 OpenSSL,6762,0.03,0
+smb,3.0.20,445,Windows Server 2016,Samba smbd 3.0.20,5399,0.5,0
+tomcat,8.5.15,8080,Ubuntu 20.04,Apache Tomcat 9.0.0.M9,6149,0.58,0
+mysql,5.7.38,3306,Ubuntu 20.04,MySQL 5.7.38,774,0.76,0
+http,2.4.49,80,Debian 11,Apache httpd 2.4.49,3182,0.38,0
+smb,3.0.20,445,Linux,Samba smbd 4.5.9,6326,0.64,1
+mysql,5.5.62,3306,Windows Server 2016,MySQL 5.5.62,4188,0.91,0
+smb,3.0.20,445,Ubuntu 20.04,Samba smbd 3.0.20,4936,0.32,1
+postgresql,12.3,5432,Ubuntu 20.04,PostgreSQL 11.8,731,0.73,0
+http,2.4.49,80,Ubuntu 20.04,nginx 1.18.0,4352,0.87,1
+https,2.4.50,443,Debian 11,nginx 1.20.1 TLS,3618,0.9,0
+https,2.4.50,443,Linux,Apache httpd 2.4.50 OpenSSL,4850,0.22,1
+ftp,2.3.4,21,Linux,ProFTPD 1.3.5,610,0.51,1
+tomcat,8.5.15,8080,Debian 11,Apache Tomcat 8.5.15,6457,0.47,1
+ssh,7.2,22,Windows Server 2016,OpenSSH_8.2p1 Ubuntu,3397,0.47,0
+ssh,7.2,22,Windows Server 2016,OpenSSH_7.2p2 Ubuntu,2066,0.19,0
+http,1.18.0,80,Debian 11,Apache httpd 2.4.49,647,0.44,0
+ssh,7.2,22,Linux,OpenSSH_7.2p2 Ubuntu,6203,0.85,1
+tomcat,9.0.0.,8080,Debian 11,Apache Tomcat 8.5.15,1378,0.38,0
+smb,4.5.9,445,Debian 11,Samba smbd 3.0.20,1585,0.3,0
+ftp,1.3.5,21,Debian 11,vsftpd 2.3.4,495,0.96,1
+http,2.4.49,80,Ubuntu 20.04,nginx 1.18.0,1012,0.94,1
+ftp,2.3.4,21,Windows Server 2016,ProFTPD 1.3.5,1703,0.67,1
+smb,4.5.9,445,Windows Server 2016,Samba smbd 4.5.9,2620,0.93,0
+ftp,1.3.5,21,Linux,vsftpd 2.3.4,4434,0.21,1
+postgresql,11.8,5432,Windows Server 2016,PostgreSQL 12.3,1322,0.44,0
+smb,3.0.20,445,Windows Server 2016,Samba smbd 3.0.20,1130,0.26,0
+http,1.18.0,80,Ubuntu 20.04,nginx 1.18.0,1697,0.69,0
+tomcat,9.0.0.,8078,Linux,Apache Tomcat 9.0.0.M9,6824,0.28,1
+http,1.18.0,80,Debian 11,nginx 1.18.0,4624,0.01,1
+http,2.4.49,80,Ubuntu 20.04,nginx 1.18.0,1074,0.04,1
+ftp,1.3.5,21,Ubuntu 20.04,vsftpd 2.3.4,2927,0.78,0
+mysql,5.5.62,3305,Ubuntu 20.04,MySQL 5.5.62,3407,0.02,0
+postgresql,12.3,5432,Ubuntu 20.04,PostgreSQL 12.3,1334,0.79,1
+ftp,1.3.5,21,Debian 11,ProFTPD 1.3.5,2530,0.82,0
+https,2.4.50,443,Debian 11,nginx 1.20.1 TLS,2312,0.86,0
+smb,4.5.9,445,Debian 11,Samba smbd 4.5.9,256,0.12,0
+http,1.18.0,80,Debian 11,nginx 1.18.0,5998,0.79,1
+ssh,8.2,22,Ubuntu 20.04,OpenSSH_8.2p1 Ubuntu,393,0.71,1
+https,1.20.1,443,Windows Server 2016,nginx 1.20.1 TLS,5464,0.85,0
+smb,4.5.9,445,Windows Server 2016,Samba smbd 4.5.9,5741,0.3,1
+mysql,5.7.38,3306,Ubuntu 20.04,MySQL 5.7.38,3356,0.55,1
+smb,3.0.20,445,Windows Server 2016,Samba smbd 4.5.9,3649,0.44,1
+tomcat,8.5.15,8080,Windows Server 2016,Apache Tomcat 9.0.0.M9,795,0.82,1
+smb,3.0.20,445,Ubuntu 20.04,Samba smbd 3.0.20,408,0.24,1
+ssh,8.2,22,Ubuntu 20.04,OpenSSH_8.2p1 Ubuntu,4079,0.4,0
+ftp,2.3.4,21,Ubuntu 20.04,vsftpd 2.3.4,6617,0.96,1
+ftp,2.3.4,19,Debian 11,vsftpd 2.3.4,6595,0.46,1
+postgresql,12.3,5432,Debian 11,PostgreSQL 12.3,1333,0.74,0
+smb,3.0.20,445,Windows Server 2016,Samba smbd 4.5.9,5164,0.24,1
+smb,3.0.20,445,Windows Server 2016,Samba smbd 3.0.20,1163,0.15,1
+http,2.4.49,80,Debian 11,nginx 1.18.0,4475,0.47,1
+mysql,5.7.38,3308,Linux,MySQL 5.7.38,3937,0.01,0
+mysql,5.7.38,3306,Ubuntu 20.04,MySQL 5.7.38,1827,0.27,0
+mysql,5.7.38,3306,Debian 11,MySQL 5.5.62,6915,0.47,0
+ftp,1.3.5,21,Linux,vsftpd 2.3.4,5295,0.43,0
+http,2.4.49,80,Windows Server 2016,Apache httpd 2.4.49,3754,0.33,0
+mysql,5.7.38,3306,Debian 11,MySQL 5.7.38,6869,0.08,1
+ftp,1.3.5,21,Linux,vsftpd 2.3.4,6208,0.03,1
+ftp,2.3.4,21,Debian 11,vsftpd 2.3.4,4650,0.95,1
+smb,4.5.9,445,Linux,Samba smbd 3.0.20,2578,0.11,1
+smb,4.5.9,445,Ubuntu 20.04,Samba smbd 3.0.20,4880,0.69,0
+ssh,8.2,22,Linux,OpenSSH_7.2p2 Ubuntu,2874,0.53,0
+ssh,8.2,22,Debian 11,OpenSSH_8.2p1 Ubuntu,894,0.43,0
+tomcat,8.5.15,8080,Windows Server 2016,Apache Tomcat 9.0.0.M9,3838,0.44,0
+smb,4.5.9,445,Linux,Samba smbd 4.5.9,3722,0.24,0
+mysql,5.7.38,3306,Windows Server 2016,MySQL 5.5.62,4024,0.21,0
+postgresql,12.3,5432,Windows Server 2016,PostgreSQL 11.8,4262,0.95,1
+mysql,5.7.38,3306,Ubuntu 20.04,MySQL 5.7.38,5321,0.71,0
+ftp,2.3.4,21,Debian 11,vsftpd 2.3.4,2538,0.66,1
+postgresql,12.3,5434,Windows Server 2016,PostgreSQL 12.3,5787,0.45,0
+https,2.4.50,443,Windows Server 2016,Apache httpd 2.4.50 OpenSSL,6115,0.54,0
+http,2.4.49,80,Debian 11,nginx 1.18.0,5965,0.59,0
+smb,3.0.20,445,Windows Server 2016,Samba smbd 3.0.20,2986,0.18,1
+http,1.18.0,80,Linux,nginx 1.18.0,5743,0.94,0
+tomcat,8.5.15,8080,Windows Server 2016,Apache Tomcat 9.0.0.M9,3951,0.44,1
+ftp,1.3.5,22,Linux,vsftpd 2.3.4,3312,0.49,0
+ftp,2.3.4,21,Windows Server 2016,vsftpd 2.3.4,2063,0.12,0
+https,1.20.1,443,Debian 11,nginx 1.20.1 TLS,4851,0.99,0
+ftp,2.3.4,20,Ubuntu 20.04,ProFTPD 1.3.5,5440,0.08,1
+ssh,7.2,22,Debian 11,OpenSSH_8.2p1 Ubuntu,2415,0.03,0
+smb,4.5.9,445,Ubuntu 20.04,Samba smbd 4.5.9,6483,0.79,0
+https,1.20.1,443,Ubuntu 20.04,Apache httpd 2.4.50 OpenSSL,2206,0.83,1
+http,1.18.0,80,Windows Server 2016,nginx 1.18.0,1048,0.47,1
+mysql,5.7.38,3306,Debian 11,MySQL 5.7.38,688,0.6,0
+postgresql,12.3,5432,Ubuntu 20.04,PostgreSQL 11.8,6294,0.67,0
+ftp,2.3.4,21,Debian 11,ProFTPD 1.3.5,1516,1.0,1
+tomcat,8.5.15,8080,Debian 11,Apache Tomcat 9.0.0.M9,2660,0.67,0
+postgresql,12.3,5432,Windows Server 2016,PostgreSQL 12.3,6694,0.76,1
+ssh,8.2,22,Linux,OpenSSH_8.2p1 Ubuntu,4245,0.82,1
+tomcat,9.0.0.,8080,Windows Server 2016,Apache Tomcat 9.0.0.M9,5153,0.44,1
+smb,3.0.20,446,Debian 11,Samba smbd 3.0.20,266,0.97,1
+https,2.4.50,443,Linux,nginx 1.20.1 TLS,793,0.22,0
+ssh,8.2,21,Debian 11,OpenSSH_8.2p1 Ubuntu,4198,0.71,0
+tomcat,9.0.0.,8080,Ubuntu 20.04,Apache Tomcat 9.0.0.M9,1591,0.92,1
+http,2.4.49,80,Debian 11,nginx 1.18.0,6482,0.51,0
+smb,4.5.9,445,Debian 11,Samba smbd 3.0.20,3688,0.54,1
+mysql,5.7.38,3305,Ubuntu 20.04,MySQL 5.7.38,1943,0.86,1
+postgresql,12.3,5432,Debian 11,PostgreSQL 12.3,5466,0.79,0
+http,1.18.0,79,Windows Server 2016,Apache httpd 2.4.49,6952,0.44,0
+tomcat,8.5.15,8080,Debian 11,Apache Tomcat 8.5.15,642,0.47,0
+postgresql,12.3,5432,Windows Server 2016,PostgreSQL 12.3,2624,0.63,0
+tomcat,8.5.15,8080,Ubuntu 20.04,Apache Tomcat 9.0.0.M9,1893,0.75,1
+ssh,7.2,22,Windows Server 2016,OpenSSH_7.2p2 Ubuntu,406,0.32,1
+postgresql,12.3,5432,Ubuntu 20.04,PostgreSQL 12.3,4666,0.68,0
+http,2.4.49,80,Debian 11,Apache httpd 2.4.49,4106,0.91,1
+tomcat,9.0.0.,8080,Linux,Apache Tomcat 9.0.0.M9,2386,0.68,1
+tomcat,9.0.0.,8080,Debian 11,Apache Tomcat 9.0.0.M9,3772,0.85,1
+mysql,5.7.38,3306,Debian 11,MySQL 5.7.38,4738,0.3,0
+ftp,1.3.5,21,Linux,ProFTPD 1.3.5,6852,0.9,1
+https,1.20.1,443,Ubuntu 20.04,nginx 1.20.1 TLS,5582,0.76,0
+http,2.4.49,78,Windows Server 2016,nginx 1.18.0,303,0.58,1
+ssh,8.2,22,Debian 11,OpenSSH_7.2p2 Ubuntu,1674,0.13,0
+postgresql,12.3,5432,Windows Server 2016,PostgreSQL 12.3,6636,0.3,0
+ssh,8.2,21,Ubuntu 20.04,OpenSSH_8.2p1 Ubuntu,6958,0.8,0
+mysql,5.5.62,3306,Linux,MySQL 5.7.38,3049,0.67,0
+mysql,5.7.38,3306,Ubuntu 20.04,MySQL 5.7.38,235,0.62,0
+postgresql,11.8,5432,Debian 11,PostgreSQL 12.3,5348,0.41,0
+ftp,1.3.5,19,Linux,vsftpd 2.3.4,4433,0.14,0
+mysql,5.5.62,3306,Linux,MySQL 5.7.38,5073,0.41,0
+ftp,1.3.5,21,Debian 11,vsftpd 2.3.4,3001,0.1,0
+postgresql,11.8,5432,Ubuntu 20.04,PostgreSQL 11.8,6977,0.82,1
+https,2.4.50,443,Windows Server 2016,Apache httpd 2.4.50 OpenSSL,1061,0.79,1
+https,2.4.50,443,Ubuntu 20.04,nginx 1.20.1 TLS,6373,0.15,0
+ftp,1.3.5,21,Ubuntu 20.04,vsftpd 2.3.4,4455,0.25,1
+ftp,2.3.4,21,Ubuntu 20.04,ProFTPD 1.3.5,159,0.17,1
+mysql,5.5.62,3306,Debian 11,MySQL 5.7.38,6403,0.36,0
+tomcat,8.5.15,8078,Windows Server 2016,Apache Tomcat 9.0.0.M9,5300,0.96,1
+tomcat,9.0.0.,8080,Linux,Apache Tomcat 9.0.0.M9,5865,0.91,1
+ssh,8.2,22,Linux,OpenSSH_7.2p2 Ubuntu,2282,0.62,0
+postgresql,12.3,5434,Windows Server 2016,PostgreSQL 12.3,4171,0.61,1
+ssh,7.2,22,Ubuntu 20.04,OpenSSH_8.2p1 Ubuntu,2806,0.83,0
+ssh,8.2,22,Windows Server 2016,OpenSSH_8.2p1 Ubuntu,1280,0.69,0
+ssh,7.2,22,Linux,OpenSSH_8.2p1 Ubuntu,6680,0.13,0
+postgresql,11.8,5432,Debian 11,PostgreSQL 11.8,2386,0.6,0
+https,2.4.50,443,Ubuntu 20.04,Apache httpd 2.4.50 OpenSSL,2898,0.85,1
+smb,3.0.20,445,Linux,Samba smbd 4.5.9,267,0.18,1
+smb,4.5.9,445,Ubuntu 20.04,Samba smbd 3.0.20,4669,0.66,1
+ftp,2.3.4,21,Ubuntu 20.04,ProFTPD 1.3.5,3469,0.45,1
+smb,4.5.9,445,Linux,Samba smbd 3.0.20,1304,0.16,0
+ssh,8.2,22,Debian 11,OpenSSH_8.2p1 Ubuntu,5003,0.44,0
+ssh,8.2,22,Windows Server 2016,OpenSSH_8.2p1 Ubuntu,4346,0.67,1
+mysql,5.5.62,3306,Windows Server 2016,MySQL 5.5.62,6316,0.14,0
+postgresql,11.8,5432,Debian 11,PostgreSQL 11.8,1088,0.38,0
+postgresql,11.8,5432,Linux,PostgreSQL 12.3,183,0.46,1
+postgresql,12.3,5432,Debian 11,PostgreSQL 12.3,973,0.41,0
+http,1.18.0,80,Windows Server 2016,Apache httpd 2.4.49,3607,0.84,1
+mysql,5.5.62,3306,Windows Server 2016,MySQL 5.7.38,1845,0.33,1
+ssh,7.2,22,Windows Server 2016,OpenSSH_7.2p2 Ubuntu,1965,0.1,0
+http,2.4.49,80,Linux,Apache httpd 2.4.49,6361,0.63,1
+tomcat,9.0.0.,8080,Windows Server 2016,Apache Tomcat 8.5.15,3632,0.07,0
+smb,4.5.9,445,Windows Server 2016,Samba smbd 3.0.20,2572,0.46,1
+postgresql,12.3,5432,Linux,PostgreSQL 12.3,3820,0.58,0
+ftp,1.3.5,23,Ubuntu 20.04,ProFTPD 1.3.5,4986,0.48,1
+ftp,1.3.5,21,Windows Server 2016,vsftpd 2.3.4,4163,0.65,1
+tomcat,9.0.0.,8080,Ubuntu 20.04,Apache Tomcat 9.0.0.M9,3084,0.92,1
+postgresql,11.8,5432,Windows Server 2016,PostgreSQL 11.8,2730,0.09,0
+smb,4.5.9,445,Ubuntu 20.04,Samba smbd 4.5.9,697,0.58,1
+postgresql,12.3,5433,Ubuntu 20.04,PostgreSQL 11.8,2566,0.56,0
+postgresql,11.8,5432,Linux,PostgreSQL 12.3,4195,0.36,0
+http,2.4.49,80,Debian 11,Apache httpd 2.4.49,1885,1.0,1
+smb,3.0.20,445,Linux,Samba smbd 4.5.9,6307,0.62,1
+http,2.4.49,80,Ubuntu 20.04,nginx 1.18.0,387,0.41,1
+https,1.20.1,443,Debian 11,Apache httpd 2.4.50 OpenSSL,4404,0.24,0
+tomcat,8.5.15,8080,Debian 11,Apache Tomcat 9.0.0.M9,6333,0.28,1
+mysql,5.5.62,3306,Ubuntu 20.04,MySQL 5.7.38,457,0.64,0
+ssh,7.2,22,Ubuntu 20.04,OpenSSH_8.2p1 Ubuntu,3710,0.91,1
+mysql,5.5.62,3305,Debian 11,MySQL 5.7.38,248,0.41,0
+postgresql,11.8,5432,Linux,PostgreSQL 12.3,1869,0.03,0
+postgresql,11.8,5432,Windows Server 2016,PostgreSQL 12.3,5732,0.83,0
+tomcat,9.0.0.,8080,Linux,Apache Tomcat 8.5.15,2126,0.22,1
+mysql,5.5.62,3306,Ubuntu 20.04,MySQL 5.7.38,1028,0.05,0
+tomcat,8.5.15,8080,Debian 11,Apache Tomcat 8.5.15,5206,0.52,1
+http,1.18.0,80,Windows Server 2016,Apache httpd 2.4.49,4704,0.42,0
+ssh,8.2,22,Linux,OpenSSH_8.2p1 Ubuntu,3881,0.04,0
+postgresql,12.3,5432,Windows Server 2016,PostgreSQL 11.8,2854,0.24,0
+ssh,8.2,22,Windows Server 2016,OpenSSH_8.2p1 Ubuntu,6694,0.64,0
+tomcat,9.0.0.,8080,Ubuntu 20.04,Apache Tomcat 8.5.15,5895,0.78,1
+smb,3.0.20,445,Ubuntu 20.04,Samba smbd 3.0.20,2615,0.93,1
+tomcat,9.0.0.,8080,Ubuntu 20.04,Apache Tomcat 9.0.0.M9,2954,0.86,1
+postgresql,12.3,5432,Windows Server 2016,PostgreSQL 12.3,3306,0.74,0
+mysql,5.7.38,3307,Debian 11,MySQL 5.7.38,6561,0.52,0
+mysql,5.5.62,3306,Ubuntu 20.04,MySQL 5.7.38,2661,0.1,0
+smb,4.5.9,445,Debian 11,Samba smbd 3.0.20,5680,0.44,1
+postgresql,12.3,5432,Linux,PostgreSQL 11.8,5528,0.64,0
+http,2.4.49,80,Debian 11,Apache httpd 2.4.49,1064,0.07,0
+postgresql,12.3,5432,Linux,PostgreSQL 11.8,5592,0.45,0
+tomcat,8.5.15,8080,Windows Server 2016,Apache Tomcat 9.0.0.M9,2605,0.65,1
+ssh,7.2,22,Debian 11,OpenSSH_8.2p1 Ubuntu,4631,0.12,0
+tomcat,8.5.15,8080,Debian 11,Apache Tomcat 8.5.15,1034,0.14,1
+http,1.18.0,80,Windows Server 2016,Apache httpd 2.4.49,4535,0.54,0
+http,2.4.49,80,Ubuntu 20.04,Apache httpd 2.4.49,1676,0.79,1
+tomcat,8.5.15,8080,Windows Server 2016,Apache Tomcat 9.0.0.M9,6613,0.98,1
+ssh,7.2,22,Debian 11,OpenSSH_8.2p1 Ubuntu,6330,0.41,0
+http,1.18.0,80,Debian 11,nginx 1.18.0,5601,0.52,1
+http,2.4.49,80,Linux,Apache httpd 2.4.49,4274,0.15,1
+postgresql,11.8,5432,Windows Server 2016,PostgreSQL 11.8,2082,0.2,0
+smb,3.0.20,445,Linux,Samba smbd 3.0.20,4878,0.94,1
+postgresql,11.8,5432,Linux,PostgreSQL 11.8,402,0.95,0
+smb,3.0.20,445,Debian 11,Samba smbd 3.0.20,4109,0.89,1
+smb,4.5.9,445,Debian 11,Samba smbd 4.5.9,3745,0.07,1
+tomcat,9.0.0.,8080,Ubuntu 20.04,Apache Tomcat 9.0.0.M9,4999,0.14,0
+postgresql,12.3,5431,Windows Server 2016,PostgreSQL 11.8,2644,0.24,0
+tomcat,8.5.15,8080,Linux,Apache Tomcat 9.0.0.M9,3176,0.86,1
+http,1.18.0,80,Ubuntu 20.04,Apache httpd 2.4.49,4111,1.0,1
+smb,4.5.9,445,Debian 11,Samba smbd 4.5.9,2002,0.22,1
+ftp,1.3.5,21,Debian 11,ProFTPD 1.3.5,4426,0.01,1
+http,1.18.0,80,Debian 11,nginx 1.18.0,400,0.4,1
+https,1.20.1,443,Linux,nginx 1.20.1 TLS,4160,0.45,0
+ssh,7.2,23,Windows Server 2016,OpenSSH_8.2p1 Ubuntu,4599,0.94,0
+https,1.20.1,443,Linux,Apache httpd 2.4.50 OpenSSL,1152,0.71,0
+tomcat,8.5.15,8080,Ubuntu 20.04,Apache Tomcat 9.0.0.M9,5052,0.32,1
+smb,4.5.9,445,Debian 11,Samba smbd 4.5.9,3920,0.82,1
+ssh,8.2,22,Linux,OpenSSH_8.2p1 Ubuntu,2205,0.97,0
+https,2.4.50,443,Ubuntu 20.04,nginx 1.20.1 TLS,1240,0.82,1
+ssh,7.2,22,Windows Server 2016,OpenSSH_8.2p1 Ubuntu,1270,0.41,1
+tomcat,8.5.15,8080,Ubuntu 20.04,Apache Tomcat 9.0.0.M9,5454,0.48,1
+http,1.18.0,80,Windows Server 2016,nginx 1.18.0,5027,0.48,0
+smb,4.5.9,445,Windows Server 2016,Samba smbd 4.5.9,5804,0.21,0
+postgresql,12.3,5432,Windows Server 2016,PostgreSQL 12.3,1028,0.57,0
+mysql,5.7.38,3305,Windows Server 2016,MySQL 5.5.62,2386,0.96,1
+tomcat,9.0.0.,8080,Ubuntu 20.04,Apache Tomcat 8.5.15,6812,0.54,0
+smb,3.0.20,445,Ubuntu 20.04,Samba smbd 3.0.20,445,0.67,1
+https,2.4.50,443,Windows Server 2016,nginx 1.20.1 TLS,853,0.68,1
+http,1.18.0,80,Debian 11,nginx 1.18.0,5359,0.2,0
+postgresql,12.3,5432,Linux,PostgreSQL 11.8,4413,0.74,0
+ftp,2.3.4,21,Ubuntu 20.04,vsftpd 2.3.4,6880,0.4,1
+smb,3.0.20,445,Linux,Samba smbd 4.5.9,2361,0.45,1
+tomcat,8.5.15,8080,Debian 11,Apache Tomcat 9.0.0.M9,1609,0.81,1
+tomcat,9.0.0.,8080,Linux,Apache Tomcat 9.0.0.M9,6507,0.3,0
+https,2.4.50,443,Debian 11,nginx 1.20.1 TLS,4251,0.33,0
+ssh,7.2,23,Windows Server 2016,OpenSSH_7.2p2 Ubuntu,85,0.26,1
+smb,4.5.9,445,Linux,Samba smbd 4.5.9,5384,0.36,1
+ssh,8.2,22,Debian 11,OpenSSH_8.2p1 Ubuntu,5684,0.12,0
+smb,4.5.9,445,Ubuntu 20.04,Samba smbd 3.0.20,3947,0.15,0
+postgresql,12.3,5432,Debian 11,PostgreSQL 11.8,6271,0.25,0
+ssh,8.2,22,Windows Server 2016,OpenSSH_7.2p2 Ubuntu,4651,0.11,0
+https,2.4.50,443,Debian 11,Apache httpd 2.4.50 OpenSSL,5602,0.21,0
+ssh,8.2,22,Debian 11,OpenSSH_7.2p2 Ubuntu,4234,0.42,0
+tomcat,9.0.0.,8080,Debian 11,Apache Tomcat 9.0.0.M9,6718,0.0,1
+ssh,7.2,22,Linux,OpenSSH_7.2p2 Ubuntu,595,0.99,0
+smb,4.5.9,445,Ubuntu 20.04,Samba smbd 4.5.9,3097,0.99,1
+mysql,5.7.38,3306,Ubuntu 20.04,MySQL 5.7.38,1001,0.18,0
+http,2.4.49,80,Linux,nginx 1.18.0,3822,0.67,1
+mysql,5.5.62,3306,Windows Server 2016,MySQL 5.5.62,2288,0.19,0
+ssh,7.2,22,Debian 11,OpenSSH_7.2p2 Ubuntu,2001,0.21,0
+ftp,1.3.5,21,Linux,vsftpd 2.3.4,6096,0.04,0
+https,2.4.50,443,Windows Server 2016,Apache httpd 2.4.50 OpenSSL,6712,0.92,0
+postgresql,11.8,5432,Ubuntu 20.04,PostgreSQL 11.8,3417,0.3,1
+http,1.18.0,80,Linux,nginx 1.18.0,5300,0.67,0
+postgresql,12.3,5432,Windows Server 2016,PostgreSQL 12.3,1536,0.75,0
+https,1.20.1,443,Ubuntu 20.04,nginx 1.20.1 TLS,502,0.56,0
