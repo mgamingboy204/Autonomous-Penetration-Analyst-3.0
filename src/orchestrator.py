@@ -11,8 +11,7 @@ from typing import Any
 
 from src.ai_brain.cve_mapper import map_scan_to_cves
 from src.ai_brain.ml_predictor import predict_and_rank
-from src.exploit_engine.metasploit_wrapper import full_run as safe_full_run
-from src.exploit_engine.metasploit_wrapper import simulate as simulate_exploit
+from src.exploit_engine.metasploit_wrapper import MetasploitRPCClient, select_validation_module, simulate, write_validation_log
 from src.learning_db.database import LearningDB
 from src.post_exploit.evidence_collector import collect_evidence
 from src.recon_engine.normalizer import normalize_nmap_xml
@@ -50,6 +49,14 @@ def is_target_allowed(target: str, whitelist_path: Path = WHITELIST_PATH) -> boo
             if ip in ipaddress.ip_network(line, strict=False):
                 return True
         elif line == target:
+            return True
+    return False
+
+
+def is_target_in_lab_network(target: str, lab_network_cidrs: list[str]) -> bool:
+    ip = ipaddress.ip_address(target)
+    for cidr in lab_network_cidrs:
+        if ip in ipaddress.ip_network(cidr, strict=False):
             return True
     return False
 
@@ -125,6 +132,8 @@ def _build_ranked_choice(candidate: dict[str, Any] | None) -> dict[str, Any] | N
         "cve_id": candidate.get("cve_id"),
         "service": matched.get("service"),
         "port": matched.get("port"),
+        "utility": candidate.get("utility"),
+        "prob": candidate.get("prob"),
     }
 
 
@@ -137,14 +146,18 @@ def run_pipeline(
 ) -> dict[str, str]:
     settings = load_settings(root / "config" / "settings.json")
 
+    if full_run and dry_run:
+        dry_run = False
+
     if not is_target_allowed(target, root / "config" / "whitelist.txt"):
         raise ValueError(f"Target {target} is not in config/whitelist.txt")
 
-    if full_run:
-        expected_token = settings.get("full_run_token")
-        exploit_enabled = settings.get("enable_exploit_engine", False)
-        if not exploit_enabled or confirm_token != expected_token:
-            raise ValueError("Full run denied: exploit engine disabled or invalid token")
+    expected_token = settings.get("full_run_token")
+    token_match = bool(confirm_token and confirm_token == expected_token)
+    target_in_lab = is_target_in_lab_network(target, settings.get("lab_network_cidrs", []))
+
+    if full_run and (not token_match or not target_in_lab):
+        raise ValueError("Full run denied: exploit engine disabled or invalid token")
 
     run_id = create_run_id()
     paths = setup_run_directories(root, run_id)
@@ -250,39 +263,59 @@ def run_pipeline(
     top_candidate = ranked_candidates[0] if ranked_candidates else None
     ranked_choice = _build_ranked_choice(top_candidate)
 
-    if dry_run:
-        simulation_result = simulate_exploit(run_ctx, ranked_choice)
-        for attempt in planned_attempts:
-            learning_db.update_attempt(
-                attempt["attempt_id"],
-                success=0,
-                evidence={"state": "simulated", "result": simulation_result},
-            )
-        status_data["artifacts"]["exploit_simulation_log"] = str(run_ctx.raw_dir / "exploit_simulation.log")
-        print("[pipeline] exploit_skipped")
-        update_step(
-            status_path,
-            status_data,
-            "exploit_skipped",
-            logger,
-            details={"exploit_skipped": True, "mode": "simulate", "result": simulation_result},
-        )
-    elif full_run:
-        validation_result = safe_full_run(run_ctx, ranked_choice)
+    logger.info(
+        "Validation gates | dry_run=%s full_run=%s enable_exploit_engine=%s token_match=%s target_in_lab=%s",
+        dry_run,
+        full_run,
+        settings.get("enable_exploit_engine", False),
+        token_match,
+        target_in_lab,
+    )
+
+    validate = bool(full_run and not dry_run and settings.get("enable_exploit_engine", False))
+
+    if validate:
+        selected = select_validation_module(target, ranked_choice)
+        if selected.module_name is None:
+            validation_result = {
+                "success": False,
+                "output": selected.reason,
+                "artifacts": [],
+                "module": None,
+                "options": {},
+                "evidence_files": [],
+            }
+            logger.info("Safe validation skipped: %s", selected.reason)
+        else:
+            client = MetasploitRPCClient()
+            try:
+                validation_result = client.run_aux_module(selected.module_name, selected.options)
+            finally:
+                client.stop_rpc()
+
+            log_path = run_ctx.raw_dir / "msf_validation.log"
+            write_validation_log(log_path, selected.module_name, selected.options, validation_result)
+            validation_result["module"] = selected.module_name
+            validation_result["options"] = selected.options
+            validation_result["evidence_files"] = [str(log_path)]
+            validation_result["artifacts"] = list(validation_result.get("artifacts", [])) + [str(log_path)]
+
         for attempt in planned_attempts:
             matched = attempt["cve_id"] == str((ranked_choice or {}).get("cve_id") or "")
             learning_db.update_attempt(
                 attempt["attempt_id"],
                 success=1 if matched and validation_result["success"] else 0,
-                evidence={
-                    "state": "safe_validation",
-                    "selected": matched,
-                    "result": validation_result,
-                },
+                evidence={"state": "safe_validation", "selected": matched, "result": validation_result},
             )
+
         status_data["artifacts"]["safe_validation_evidence"] = validation_result.get("evidence_files", [])
         if validation_result.get("evidence_files"):
             status_data["artifacts"]["msf_validation_log"] = validation_result["evidence_files"][0]
+
+        evidence_manifest = collect_evidence(run_ctx, validation_result.get("artifacts", []))
+        status_data["artifacts"]["evidence_manifest"] = str(run_ctx.report_dir / "evidence.json")
+        status_data["artifacts"]["evidence_count"] = evidence_manifest["evidence_count"]
+
         print("[pipeline] exploit_done")
         update_step(
             status_path,
@@ -291,25 +324,29 @@ def run_pipeline(
             logger,
             details={"exploit_skipped": False, "mode": "safe_full_run", "result": validation_result},
         )
-
-        evidence_manifest = collect_evidence(run_ctx)
-        status_data["artifacts"]["evidence_manifest"] = str(run_ctx.report_dir / "evidence.json")
-        status_data["artifacts"]["evidence_count"] = evidence_manifest["evidence_count"]
     else:
-        for attempt in planned_attempts:
-            learning_db.update_attempt(
-                attempt["attempt_id"],
-                success=0,
-                evidence={"state": "skipped", "reason": "full_run flag not enabled"},
-            )
+        logger.info("Safe validation skipped by gating decision")
+        if dry_run:
+            simulation_result = simulate(run_ctx, ranked_choice)
+            for attempt in planned_attempts:
+                learning_db.update_attempt(
+                    attempt["attempt_id"],
+                    success=0,
+                    evidence={"state": "simulated", "result": simulation_result},
+                )
+            status_data["artifacts"]["exploit_simulation_log"] = str(run_ctx.raw_dir / "exploit_simulation.log")
+            details = {"exploit_skipped": True, "mode": "simulate", "result": simulation_result}
+        else:
+            for attempt in planned_attempts:
+                learning_db.update_attempt(
+                    attempt["attempt_id"],
+                    success=0,
+                    evidence={"state": "skipped", "reason": "gating_decision_false"},
+                )
+            details = {"exploit_skipped": True, "reason": "gating_decision_false"}
+
         print("[pipeline] exploit_skipped")
-        update_step(
-            status_path,
-            status_data,
-            "exploit_skipped",
-            logger,
-            details={"exploit_skipped": True, "reason": "full_run flag not enabled"},
-        )
+        update_step(status_path, status_data, "exploit_skipped", logger, details=details)
 
     print("[pipeline] report_skipped")
     update_step(status_path, status_data, "report_skipped", logger, details={"note": "Reporting phase not implemented in Phase 5"})
