@@ -235,3 +235,66 @@ def test_orchestrator_updates_learning_db_from_mocked_rpc(tmp_path: Path, monkey
         row = conn.execute("SELECT success FROM attempts WHERE cve_id='CVE-1' LIMIT 1").fetchone()
     assert row is not None
     assert row[0] == 1
+
+
+def test_full_run_auth_failure_writes_msf_rpc_debug_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, minimal_scan_xml: str):
+    (tmp_path / "config").mkdir()
+    (tmp_path / "config" / "whitelist.txt").write_text("192.168.56.0/24\n", encoding="utf-8")
+    (tmp_path / "config" / "settings.json").write_text(
+        json.dumps(
+            {
+                "enable_exploit_engine": True,
+                "full_run_token": "VALID_TOKEN",
+                "lab_network_cidrs": ["192.168.56.0/24"],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    def fake_run_nmap(target: str, out_dir: Path, logger):
+        xml_path = out_dir / "nmap.xml"
+        txt_path = out_dir / "nmap.txt"
+        run_log_path = out_dir / "nmap_run.log"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        xml_path.write_text(minimal_scan_xml, encoding="utf-8")
+        txt_path.write_text("ok", encoding="utf-8")
+        run_log_path.write_text("ok", encoding="utf-8")
+        return {"target": target, "xml_path": str(xml_path), "txt_path": str(txt_path), "run_log_path": str(run_log_path)}
+
+    monkeypatch.setattr(orchestrator, "run_nmap", fake_run_nmap)
+    monkeypatch.setattr(orchestrator, "map_scan_to_cves", lambda normalized: [{"cve_id": "CVE-1"}])
+    monkeypatch.setattr(
+        orchestrator,
+        "predict_and_rank",
+        lambda normalized, matches, db: [{"cve_id": "CVE-1", "utility": 1.0, "prob": 0.9, "cvss": 8.0, "matched_service": {"service": "http", "port": 80}}],
+    )
+
+    class FakeRPCClient:
+        def __init__(self, *args, **kwargs):
+            self.debug_trace = {"errors": ["auth failed"]}
+
+        @classmethod
+        def from_config(cls, settings_path):
+            return cls()
+
+        def smoke_test(self):
+            raise RuntimeError("auth failed")
+
+        def stop_rpc(self):
+            return None
+
+    monkeypatch.setattr(orchestrator, "MetasploitRPCClient", FakeRPCClient)
+
+    result = run_pipeline(
+        target="192.168.56.101",
+        root=tmp_path,
+        dry_run=False,
+        full_run=True,
+        confirm_token="VALID_TOKEN",
+    )
+
+    run_dir = Path(result["run_dir"])
+    debug_path = run_dir / "raw" / "msf_rpc_debug.json"
+    assert debug_path.exists()
+    payload = json.loads(debug_path.read_text(encoding="utf-8"))
+    assert payload["validation_error"] == "auth failed"

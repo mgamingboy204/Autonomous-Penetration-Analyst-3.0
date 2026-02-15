@@ -293,10 +293,18 @@ def run_pipeline(
                 client = MetasploitRPCClient()
 
             smoke_result: dict[str, Any] | None = None
+            validation_error: Exception | None = None
             try:
                 if hasattr(client, "smoke_test"):
                     smoke_result = client.smoke_test()
                 validation_result = client.run_aux_module(selected.module_name, selected.options)
+            except Exception as exc:
+                validation_error = exc
+                validation_result = {
+                    "success": False,
+                    "output": f"Metasploit safe validation failed: {exc}",
+                    "artifacts": [],
+                }
             finally:
                 client.stop_rpc()
 
@@ -312,6 +320,8 @@ def run_pipeline(
                     "port": smoke_result.get("port"),
                     "auth_result": smoke_result.get("auth_result"),
                 }
+            if validation_error is not None:
+                debug_payload["validation_error"] = str(validation_error)
             debug_path.write_text(json.dumps(debug_payload, indent=2), encoding="utf-8")
 
             validation_result["module"] = selected.module_name

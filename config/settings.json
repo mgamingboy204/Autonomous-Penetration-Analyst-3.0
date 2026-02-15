@@ -2,5 +2,10 @@
   "enable_exploit_engine": false,
   "full_run_token": "CHANGE_ME",
   "lab_network_cidrs": ["192.168.56.0/24"],
-  "report_title": "Autonomous Penetration Analyst 3.0 Lab Report"
+  "report_title": "Autonomous Penetration Analyst 3.0 Lab Report",
+  "msf_rpc_host": "127.0.0.1",
+  "msf_rpc_port": 55553,
+  "msf_rpc_user": "msf",
+  "msf_rpc_pass": "msf",
+  "msf_rpc_ssl": false
 }
