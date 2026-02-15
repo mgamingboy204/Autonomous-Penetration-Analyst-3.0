@@ -5,3 +5,4 @@ jinja2
 scikit-learn
 joblib
 pytest
+msgpack
