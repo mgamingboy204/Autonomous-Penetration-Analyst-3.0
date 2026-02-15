@@ -1,0 +1,145 @@
+[
+  {
+    "cve_id": "CVE-2011-2523",
+    "product": "vsftpd",
+    "version_regex": "2\\.3\\.4",
+    "cvss": 9.8,
+    "published": "2011-07-03",
+    "summary": "vsftpd 2.3.4 backdoor allows unauthenticated remote command execution.",
+    "tags": [
+      "remote",
+      "rce"
+    ]
+  },
+  {
+    "cve_id": "CVE-2007-2447",
+    "product": "samba",
+    "version_regex": "3\\.0\\.[0-9]+",
+    "cvss": 9.3,
+    "published": "2007-05-14",
+    "summary": "Samba username map script command injection can enable remote code execution.",
+    "tags": [
+      "remote",
+      "rce"
+    ]
+  },
+  {
+    "cve_id": "CVE-2017-7494",
+    "product": "samba",
+    "version_regex": "3\\.|4\\.[0-5]|4\\.6\\.[0-4]",
+    "cvss": 8.1,
+    "published": "2017-05-24",
+    "summary": "Samba writable share vulnerability allows loading a malicious shared library.",
+    "tags": [
+      "remote",
+      "rce"
+    ]
+  },
+  {
+    "cve_id": "CVE-2017-12617",
+    "product": "tomcat",
+    "version_regex": "7\\.0\\.0|7\\.0\\.[1-7][0-9]|8\\.5\\.[0-1][0-9]|9\\.0\\.0\\.M[1-9]",
+    "cvss": 7.5,
+    "published": "2017-09-19",
+    "summary": "Apache Tomcat on Windows can allow JSP upload leading to remote code execution.",
+    "tags": [
+      "remote",
+      "rce"
+    ]
+  },
+  {
+    "cve_id": "CVE-2004-2687",
+    "product": "distccd",
+    "version_regex": "^(?:[0-2]\\.|3\\.0\\.)",
+    "cvss": 10.0,
+    "published": "2004-02-19",
+    "summary": "distccd allows remote command execution due to missing authentication.",
+    "tags": [
+      "remote",
+      "rce"
+    ]
+  },
+  {
+    "cve_id": "CVE-2019-9193",
+    "product": "postgresql",
+    "version_regex": "9\\.|10\\.|11\\.",
+    "cvss": 7.2,
+    "published": "2019-03-20",
+    "summary": "COPY FROM PROGRAM can be abused in misconfigured PostgreSQL environments.",
+    "tags": [
+      "remote",
+      "misconfig"
+    ]
+  },
+  {
+    "cve_id": "CVE-2021-41773",
+    "product": "apache",
+    "version_regex": "2\\.4\\.49",
+    "cvss": 7.5,
+    "published": "2021-10-05",
+    "summary": "Apache HTTP Server path traversal vulnerability can expose sensitive files.",
+    "tags": [
+      "remote",
+      "path-traversal"
+    ]
+  },
+  {
+    "cve_id": "CVE-2021-42013",
+    "product": "apache",
+    "version_regex": "2\\.4\\.50",
+    "cvss": 9.8,
+    "published": "2021-10-07",
+    "summary": "Apache HTTP Server path traversal and possible command execution bypass.",
+    "tags": [
+      "remote",
+      "rce"
+    ]
+  },
+  {
+    "cve_id": "CVE-2016-0777",
+    "product": "openssh",
+    "version_regex": "5\\.[0-9]|6\\.[0-9]|7\\.1",
+    "cvss": 5.9,
+    "published": "2016-01-14",
+    "summary": "OpenSSH roaming feature may leak client private key material.",
+    "tags": [
+      "remote",
+      "info-leak"
+    ]
+  },
+  {
+    "cve_id": "CVE-2018-15473",
+    "product": "openssh",
+    "version_regex": "7\\.[0-7]",
+    "cvss": 5.3,
+    "published": "2018-08-20",
+    "summary": "OpenSSH user enumeration via crafted authentication requests.",
+    "tags": [
+      "remote",
+      "user-enum"
+    ]
+  },
+  {
+    "cve_id": "CVE-2012-2122",
+    "product": "mysql",
+    "version_regex": "5\\.[15]\\.[0-9]+",
+    "cvss": 10.0,
+    "published": "2012-06-09",
+    "summary": "MySQL authentication bypass due to memcmp return handling bug.",
+    "tags": [
+      "remote",
+      "auth-bypass"
+    ]
+  },
+  {
+    "cve_id": "CVE-2019-6111",
+    "product": "openssh",
+    "version_regex": "7\\.[0-9]",
+    "cvss": 5.8,
+    "published": "2019-01-11",
+    "summary": "scp client can be tricked into overwriting arbitrary local files.",
+    "tags": [
+      "local"
+    ]
+  }
+]
