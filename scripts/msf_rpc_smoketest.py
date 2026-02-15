@@ -1,4 +1,23 @@
 #!/usr/bin/env python3
+"""
+Manual validation:
+1) No SSL:
+   pkill -9 -f msfrpcd
+   msfrpcd -f -a 127.0.0.1 -p 55553 -U msf -P msf
+   python3 scripts/msf_rpc_smoketest.py
+   Expected: status OK, scheme http, chosen_uri ending in /api/, token present.
+
+2) SSL:
+   pkill -9 -f msfrpcd
+   msfrpcd -f -a 127.0.0.1 -p 55553 -S -U msf -P msf
+   python3 scripts/msf_rpc_smoketest.py
+   Expected: status OK, scheme https, chosen_uri ending in /api/, token present.
+
+3) Wrong creds:
+   Change config password and rerun.
+   Expected: clean auth failed with included server response.
+"""
+
 import json
 from pathlib import Path
 import sys
@@ -6,75 +25,100 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.exploit_engine.metasploit_wrapper import MetasploitRPCClient
+from scripts.msf_rpc_client import MsfRpcClient, RpcAuthError, RpcClientError, RpcDecodeError, RpcTransportError
+
+
+def _read_settings() -> dict:
+    settings_path = ROOT / "config" / "settings.json"
+    if not settings_path.exists():
+        return {}
+    return json.loads(settings_path.read_text(encoding="utf-8"))
+
+
+def _ssl_pref(settings: dict) -> bool | None:
+    if "msf_rpc_ssl" not in settings:
+        return None
+    raw = settings.get("msf_rpc_ssl")
+    if isinstance(raw, bool):
+        return raw
+    return str(raw).strip().lower() in {"1", "true", "yes", "on"}
 
 
 def main() -> int:
-    client = MetasploitRPCClient.from_config(ROOT / "config" / "settings.json")
+    settings = _read_settings()
+    host = str(settings.get("msf_rpc_host", "127.0.0.1"))
+    port = int(settings.get("msf_rpc_port", 55553))
+    username = str(settings.get("msf_rpc_user", "msf"))
+    password = str(settings.get("msf_rpc_pass", "msf"))
+    ssl_pref = _ssl_pref(settings)
+
+
+    client = None
     try:
-        if not client.ensure_rpc_running():
-            print(json.dumps({"status": "ERROR", "reason": "msfrpcd not running", "debug": client.debug_trace}, indent=2))
-            return 1
-
-        candidates = client._candidate_probe_uris()
-        auth_result = None
-        for uri in candidates:
-            result = client._rpc_call("auth.login", client.username, client.password, base_uri=uri)
-            if result.get("_rpc_error"):
-                print(json.dumps({"status": "PROBE_ERROR", "uri": uri, "error": result}, indent=2))
-                if result.get("suspect_endpoint_mismatch"):
-                    print("Try /api/ vs /api")
-                continue
-            auth_result = result
-            client.uri = uri
-            break
-
-        if auth_result is None:
-            print(json.dumps({"status": "ERROR", "reason": "All endpoint probes failed", "debug": client.debug_trace}, indent=2))
-            print("Try /api/ vs /api")
-            return 2
-
-        if auth_result.get("result") != "success":
-            print(json.dumps({"status": "ERROR", "reason": "running but auth failed", "auth": auth_result, "debug": client.debug_trace}, indent=2))
-            return 3
-
-        token = str(auth_result["token"])
-        created = client._rpc_call("console.create", token, base_uri=client.uri)
-        if created.get("_rpc_error") or created.get("id") is None:
-            print(json.dumps({"status": "ERROR", "reason": "console.create failed", "result": created}, indent=2))
-            return 4
-
-        console_id = created["id"]
-        try:
-            write_result = client._rpc_call("console.write", token, console_id, "version\n", base_uri=client.uri)
-            if write_result.get("_rpc_error"):
-                print(json.dumps({"status": "ERROR", "reason": "console.write failed", "result": write_result}, indent=2))
-                return 5
-            read_result = client._rpc_call("console.read", token, console_id, base_uri=client.uri)
-            if read_result.get("_rpc_error"):
-                print(json.dumps({"status": "ERROR", "reason": "console.read failed", "result": read_result}, indent=2))
-                return 6
-        finally:
-            client._rpc_call("console.destroy", token, console_id, base_uri=client.uri)
-
+        client = MsfRpcClient(host, port, username, password, ssl_pref)
+        probe = client.probe_and_login()
+        version = client.call("core.version")
         print(
             json.dumps(
                 {
                     "status": "OK",
-                    "chosen_uri": client.uri,
-                    "auth_result": auth_result.get("result"),
-                    "console_output": str(read_result.get("data") or ""),
-                    "attempted_uris": client.debug_trace.get("attempted_uris", []),
+                    "scheme": probe.scheme,
+                    "chosen_uri": probe.base_url,
+                    "endpoint": "/api/",
+                    "token_present": bool(probe.token),
+                    "auth_result": probe.decoded_login_response.get("result"),
+                    "core_version": version,
+                    "attempts": client.debug_attempts,
                 },
                 indent=2,
             )
         )
         return 0
-    except Exception as exc:
-        print(json.dumps({"status": "ERROR", "error": str(exc), "debug": client.debug_trace}, indent=2))
-        return 1
-    finally:
-        client.stop_rpc()
+    except RpcAuthError as exc:
+        print(
+            json.dumps(
+                {
+                    "status": "ERROR",
+                    "reason": "auth failed",
+                    "error": str(exc),
+                    "chosen_uri": client.base_url if client else None,
+                    "endpoint": "/api/",
+                    "attempts": client.debug_attempts if client else [],
+                },
+                indent=2,
+            )
+        )
+        return 3
+    except RpcTransportError as exc:
+        print(
+            json.dumps(
+                {
+                    "status": "ERROR",
+                    "reason": "wrong scheme or SSL disabled",
+                    "error": str(exc),
+                    "chosen_uri": client.base_url if client else None,
+                    "endpoint": "/api/",
+                    "attempts": client.debug_attempts if client else [],
+                },
+                indent=2,
+            )
+        )
+        return 2
+    except (RpcDecodeError, RpcClientError) as exc:
+        print(
+            json.dumps(
+                {
+                    "status": "ERROR",
+                    "reason": "rpc format/decode issue",
+                    "error": str(exc),
+                    "chosen_uri": client.base_url if client else None,
+                    "endpoint": "/api/",
+                    "attempts": client.debug_attempts if client else [],
+                },
+                indent=2,
+            )
+        )
+        return 4
 
 
 if __name__ == "__main__":
