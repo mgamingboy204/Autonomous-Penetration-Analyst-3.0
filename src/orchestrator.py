@@ -8,6 +8,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from src.recon_engine.normalizer import normalize_nmap_xml
+from src.recon_engine.scanner import run_nmap
 
 ROOT = Path(__file__).resolve().parents[1]
 SETTINGS_PATH = ROOT / "config" / "settings.json"
@@ -74,11 +76,21 @@ def write_status(status_path: Path, status_data: dict[str, Any]) -> None:
     status_path.write_text(json.dumps(status_data, indent=2), encoding="utf-8")
 
 
-def update_step(status_path: Path, status_data: dict[str, Any], step: str, logger: logging.Logger) -> None:
-    status_data["steps"][step] = {
+def update_step(
+    status_path: Path,
+    status_data: dict[str, Any],
+    step: str,
+    logger: logging.Logger,
+    details: dict[str, Any] | None = None,
+) -> None:
+    step_payload: dict[str, Any] = {
         "state": "done",
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
+    if details:
+        step_payload["details"] = details
+
+    status_data["steps"][step] = step_payload
     status_data["current_step"] = step
     write_status(status_path, status_data)
     logger.info("Step complete: %s", step)
@@ -115,33 +127,56 @@ def run_pipeline(
         "created_at": datetime.now(timezone.utc).isoformat(),
         "current_step": "initialized",
         "steps": {},
+        "artifacts": {},
     }
     write_status(status_path, status_data)
     logger.info("Initialized run %s for target %s", run_id, target)
 
-    for step in [
-        "recon_started",
-        "recon_done",
-        "normalize_done",
-        "ai_done",
-        "exploit_skipped",
-        "report_skipped",
-    ]:
-        print(f"[pipeline] {step}")
-        update_step(status_path, status_data, step, logger)
+    print("[pipeline] recon_started")
+    update_step(status_path, status_data, "recon_started", logger)
 
-    logger.info("Scaffolding run completed")
+    scan_paths = run_nmap(target=target, out_dir=paths["raw"], logger=logger)
+    status_data["artifacts"]["nmap_xml"] = scan_paths["xml_path"]
+    status_data["artifacts"]["nmap_txt"] = scan_paths["txt_path"]
+    status_data["artifacts"]["nmap_run_log"] = scan_paths["run_log_path"]
+    print("[pipeline] recon_done")
+    update_step(status_path, status_data, "recon_done", logger, details=scan_paths)
+
+    scan_json_path = paths["normalized"] / "scan.json"
+    normalized = normalize_nmap_xml(Path(scan_paths["xml_path"]), target, scan_json_path)
+    status_data["artifacts"]["scan_json"] = str(scan_json_path)
+    print("[pipeline] normalize_done")
+    update_step(
+        status_path,
+        status_data,
+        "normalize_done",
+        logger,
+        details={"scan_json": str(scan_json_path), "open_ports": len(normalized["ports"])},
+    )
+
+    print("[pipeline] ai_done")
+    update_step(status_path, status_data, "ai_done", logger, details={"note": "AI phase not implemented in Phase 1"})
+
+    exploit_note = "Dry run enabled; exploit step skipped" if dry_run else "Exploit phase not implemented in Phase 1"
+    print("[pipeline] exploit_skipped")
+    update_step(status_path, status_data, "exploit_skipped", logger, details={"note": exploit_note})
+
+    print("[pipeline] report_skipped")
+    update_step(status_path, status_data, "report_skipped", logger, details={"note": "Reporting phase not implemented in Phase 1"})
+
+    logger.info("Phase-1 run completed")
 
     return {
         "run_id": run_id,
         "run_dir": str(paths["run_dir"]),
         "status_path": str(status_path),
         "log_path": str(paths["logs"] / "app.log"),
+        "scan_json_path": str(scan_json_path),
     }
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="APA3 phase-0 orchestrator scaffold")
+    parser = argparse.ArgumentParser(description="APA3 phase-1 orchestrator")
     parser.add_argument("--target", required=True, help="Target IPv4 address")
     parser.add_argument("--dry-run", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--full-run", action="store_true", help="Requires enabled settings + valid token")
