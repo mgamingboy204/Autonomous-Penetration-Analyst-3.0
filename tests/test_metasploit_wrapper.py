@@ -34,10 +34,13 @@ def test_rpc_call_raises_clear_error_when_msgpack_missing():
             client._rpc_call("auth.login", "msf", "msf")
 
 
-def test_rpc_call_probes_endpoint_and_selects_working_combo():
+def test_probe_rpc_endpoint_tries_multiple_endpoints_and_selects_first_valid_response():
+    if metasploit_wrapper.msgpack is None:
+        pytest.skip("msgpack not installed in test environment")
     class FakeResponse:
-        def __init__(self, body: bytes):
+        def __init__(self, body: bytes, content_type: str):
             self._body = body
+            self.headers = {"Content-Type": content_type}
 
         def read(self) -> bytes:
             return self._body
@@ -53,15 +56,15 @@ def test_rpc_call_probes_endpoint_and_selects_working_combo():
 
     def fake_urlopen(request, timeout=20, context=None):
         calls.append(request.full_url)
-        if request.full_url.endswith("/api/"):
-            return FakeResponse(b"<html>wrong</html>")
-        return FakeResponse(packed)
+        if request.full_url.endswith("/api"):
+            return FakeResponse(b"<html>wrong endpoint</html>", "text/html")
+        return FakeResponse(packed, "application/msgpack")
 
     client = MetasploitRPCClient(ssl_enabled=False)
     with patch("urllib.request.urlopen", side_effect=fake_urlopen):
-        result = client._rpc_call("auth.login", "msf", "msf")
+        uri = client.probe_rpc_endpoint()
 
-    assert result["result"] == "success"
-    assert client.active_endpoint == "/api"
-    assert calls[0].endswith("/api/")
-    assert calls[1].endswith("/api")
+    assert uri.endswith("/api/")
+    assert client.active_endpoint == "/api/"
+    assert calls[0].endswith("/api")
+    assert calls[1].endswith("/api/")
