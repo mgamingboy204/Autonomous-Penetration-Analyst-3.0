@@ -4,19 +4,36 @@ import json
 import logging
 import random
 import string
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from src.ai_brain.cve_mapper import map_scan_to_cves
 from src.ai_brain.ml_predictor import predict_and_rank
+from src.exploit_engine.metasploit_wrapper import full_run as safe_full_run
+from src.exploit_engine.metasploit_wrapper import simulate as simulate_exploit
 from src.learning_db.database import LearningDB
+from src.post_exploit.evidence_collector import collect_evidence
 from src.recon_engine.normalizer import normalize_nmap_xml
 from src.recon_engine.scanner import run_nmap
 
 ROOT = Path(__file__).resolve().parents[1]
 SETTINGS_PATH = ROOT / "config" / "settings.json"
 WHITELIST_PATH = ROOT / "config" / "whitelist.txt"
+
+
+@dataclass
+class RunContext:
+    run_id: str
+    target: str
+    run_dir: Path
+    raw_dir: Path
+    normalized_dir: Path
+    logs_dir: Path
+    report_dir: Path
+    evidence_dir: Path
+    full_run_enabled: bool
 
 
 def load_settings(path: Path = SETTINGS_PATH) -> dict[str, Any]:
@@ -51,6 +68,7 @@ def setup_run_directories(root: Path, run_id: str) -> dict[str, Path]:
         "normalized": run_dir / "normalized",
         "logs": run_dir / "logs",
         "report": run_dir / "report",
+        "evidence": run_dir / "evidence",
     }
     for p in paths.values():
         p.mkdir(parents=True, exist_ok=True)
@@ -99,6 +117,17 @@ def update_step(
     logger.info("Step complete: %s", step)
 
 
+def _build_ranked_choice(candidate: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not candidate:
+        return None
+    matched = candidate.get("matched_service", {})
+    return {
+        "cve_id": candidate.get("cve_id"),
+        "service": matched.get("service"),
+        "port": matched.get("port"),
+    }
+
+
 def run_pipeline(
     target: str,
     dry_run: bool = True,
@@ -121,6 +150,18 @@ def run_pipeline(
     paths = setup_run_directories(root, run_id)
     status_path = paths["run_dir"] / "status.json"
     logger = setup_logging(paths["logs"] / "app.log")
+
+    run_ctx = RunContext(
+        run_id=run_id,
+        target=target,
+        run_dir=paths["run_dir"],
+        raw_dir=paths["raw"],
+        normalized_dir=paths["normalized"],
+        logs_dir=paths["logs"],
+        report_dir=paths["report"],
+        evidence_dir=paths["evidence"],
+        full_run_enabled=full_run,
+    )
 
     status_data: dict[str, Any] = {
         "run_id": run_id,
@@ -206,24 +247,72 @@ def run_pipeline(
         },
     )
 
+    top_candidate = ranked_candidates[0] if ranked_candidates else None
+    ranked_choice = _build_ranked_choice(top_candidate)
+
     if dry_run:
-        exploit_note = "Dry run enabled; exploit step skipped"
+        simulation_result = simulate_exploit(run_ctx, ranked_choice)
+        for attempt in planned_attempts:
+            learning_db.update_attempt(
+                attempt["attempt_id"],
+                success=0,
+                evidence={"state": "simulated", "result": simulation_result},
+            )
+        status_data["artifacts"]["exploit_simulation_log"] = str(run_ctx.raw_dir / "exploit_simulation.log")
+        print("[pipeline] exploit_skipped")
+        update_step(
+            status_path,
+            status_data,
+            "exploit_skipped",
+            logger,
+            details={"exploit_skipped": True, "mode": "simulate", "result": simulation_result},
+        )
+    elif full_run:
+        validation_result = safe_full_run(run_ctx, ranked_choice)
+        for attempt in planned_attempts:
+            matched = attempt["cve_id"] == str((ranked_choice or {}).get("cve_id") or "")
+            learning_db.update_attempt(
+                attempt["attempt_id"],
+                success=1 if matched and validation_result["success"] else 0,
+                evidence={
+                    "state": "safe_validation",
+                    "selected": matched,
+                    "result": validation_result,
+                },
+            )
+        status_data["artifacts"]["safe_validation_evidence"] = validation_result.get("evidence_files", [])
+        print("[pipeline] exploit_done")
+        update_step(
+            status_path,
+            status_data,
+            "exploit_done",
+            logger,
+            details={"exploit_skipped": False, "mode": "safe_full_run", "result": validation_result},
+        )
+
+        evidence_manifest = collect_evidence(run_ctx)
+        status_data["artifacts"]["evidence_manifest"] = str(run_ctx.report_dir / "evidence.json")
+        status_data["artifacts"]["evidence_count"] = evidence_manifest["evidence_count"]
     else:
         for attempt in planned_attempts:
             learning_db.update_attempt(
                 attempt["attempt_id"],
                 success=0,
-                evidence={"state": "skipped", "reason": "Exploit phase not implemented"},
+                evidence={"state": "skipped", "reason": "full_run flag not enabled"},
             )
-        exploit_note = "Exploit phase not implemented in Phase 1"
-
-    print("[pipeline] exploit_skipped")
-    update_step(status_path, status_data, "exploit_skipped", logger, details={"note": exploit_note})
+        print("[pipeline] exploit_skipped")
+        update_step(
+            status_path,
+            status_data,
+            "exploit_skipped",
+            logger,
+            details={"exploit_skipped": True, "reason": "full_run flag not enabled"},
+        )
 
     print("[pipeline] report_skipped")
-    update_step(status_path, status_data, "report_skipped", logger, details={"note": "Reporting phase not implemented in Phase 1"})
+    update_step(status_path, status_data, "report_skipped", logger, details={"note": "Reporting phase not implemented in Phase 5"})
 
-    logger.info("Phase-1 run completed")
+    logger.info("Phase-5 run completed")
 
     return {
         "run_id": run_id,
@@ -237,7 +326,7 @@ def run_pipeline(
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="APA3 phase-1 orchestrator")
+    parser = argparse.ArgumentParser(description="APA3 phase-5 orchestrator")
     parser.add_argument("--target", required=True, help="Target IPv4 address")
     parser.add_argument("--dry-run", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--full-run", action="store_true", help="Requires enabled settings + valid token")
