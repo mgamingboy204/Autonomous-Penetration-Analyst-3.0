@@ -1,35 +1,42 @@
 #!/usr/bin/env python3
 import argparse
-import sys
 from pathlib import Path
+import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from src.orchestrator import run_pipeline
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Examiner-friendly phase-0 runner")
     parser.add_argument("--target", required=True)
-    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--dry-run", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--full-run", action="store_true")
-    parser.add_argument("--confirm-token")
+    parser.add_argument("--confirm-token", default=None)
     args = parser.parse_args()
 
-    for step in [
-        "[1/9] whitelist check ...",
-        "[2/9] recon execution ...",
-        "[3/9] normalization ...",
-        "[4/9] local CVE mapping ...",
-        "[5/9] ML risk prediction ...",
-        "[6/9] strategy selection ...",
-        "[7/9] controlled validation step ...",
-        "[8/9] evidence collation ...",
-        "[9/9] report generation ...",
-    ]:
+    steps = [
+        "[1/5] whitelist check",
+        "[2/5] run_id + folders",
+        "[3/5] status.json + app.log",
+        "[4/5] placeholder pipeline",
+        "[5/5] completion summary",
+    ]
+    for step in steps:
         print(step)
 
-    result = run_pipeline(args.target, dry_run=args.dry_run or not args.full_run, full_run=args.full_run, confirm_token=args.confirm_token)
-    print("Run complete")
-    print("Report:", result["report"])
-    print("Dashboard command: python src/dashboard/app.py")
+    result = run_pipeline(
+        target=args.target,
+        dry_run=args.dry_run,
+        full_run=args.full_run,
+        confirm_token=args.confirm_token,
+    )
+
+    print("Run completed.")
+    print(f"Run folder: {result['run_dir']}")
+
+
+if __name__ == "__main__":
+    main()

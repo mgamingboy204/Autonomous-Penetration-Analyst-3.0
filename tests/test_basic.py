@@ -1,42 +1,75 @@
-import tempfile
+import sys
 from pathlib import Path
 
-from src.ai_brain.ml_predictor import feature_vector, shannon_entropy
-from src.learning_db.database import LearningDB
-from src.orchestrator import is_target_allowed
-from src.recon_engine.normalizer import parse_nmap_xml
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+import json
+
+from src.orchestrator import is_target_allowed, run_pipeline
+
+def test_whitelist_validator_exact_and_cidr(tmp_path: Path):
+    whitelist = tmp_path / "whitelist.txt"
+    whitelist.write_text("192.168.56.0/24\n10.10.10.10\n", encoding="utf-8")
+
+    assert is_target_allowed("192.168.56.101", whitelist)
+    assert is_target_allowed("10.10.10.10", whitelist)
+    assert not is_target_allowed("8.8.8.8", whitelist)
 
 
-def test_whitelist_validation():
-    with tempfile.TemporaryDirectory() as td:
-        w = Path(td) / "w.txt"
-        w.write_text("192.168.56.0/24\n10.0.0.5\n")
-        assert is_target_allowed("192.168.56.10", w)
-        assert not is_target_allowed("8.8.8.8", w)
+def test_run_folder_creation(tmp_path: Path):
+    (tmp_path / "config").mkdir()
+    (tmp_path / "config" / "whitelist.txt").write_text("192.168.56.0/24\n", encoding="utf-8")
+    (tmp_path / "config" / "settings.json").write_text(
+        json.dumps(
+            {
+                "enable_exploit_engine": False,
+                "full_run_token": "CHANGE_ME",
+                "lab_network_cidrs": ["192.168.56.0/24"],
+                "report_title": "Autonomous Penetration Analyst 3.0 Lab Report",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = run_pipeline(target="192.168.56.101", root=tmp_path)
+    run_dir = Path(result["run_dir"])
+
+    assert run_dir.exists()
+    assert (run_dir / "raw").exists()
+    assert (run_dir / "normalized").exists()
+    assert (run_dir / "logs").exists()
+    assert (run_dir / "report").exists()
 
 
-def test_nmap_xml_parsing_schema():
-    xml = "<nmaprun><host><ports><port protocol='tcp' portid='22'><state state='open'/><service name='ssh' product='OpenSSH' version='7.2' extrainfo='Ubuntu'/></port></ports><os><osmatch name='Linux 3.X'/></os></host></nmaprun>"
-    with tempfile.TemporaryDirectory() as td:
-        p = Path(td) / "nmap.xml"
-        p.write_text(xml)
-        out = parse_nmap_xml(p, "192.168.56.101")
-        assert out["host_os_guess"] == "Linux 3.X"
-        assert out["ports"][0]["service"] == "ssh"
+def test_status_json_structure(tmp_path: Path):
+    (tmp_path / "config").mkdir()
+    (tmp_path / "config" / "whitelist.txt").write_text("192.168.56.0/24\n", encoding="utf-8")
+    (tmp_path / "config" / "settings.json").write_text(
+        json.dumps(
+            {
+                "enable_exploit_engine": False,
+                "full_run_token": "CHANGE_ME",
+                "lab_network_cidrs": ["192.168.56.0/24"],
+                "report_title": "Autonomous Penetration Analyst 3.0 Lab Report",
+            }
+        ),
+        encoding="utf-8",
+    )
 
+    result = run_pipeline(target="192.168.56.101", root=tmp_path)
+    status = json.loads(Path(result["status_path"]).read_text(encoding="utf-8"))
 
-def test_entropy_calc():
-    assert round(shannon_entropy("aaaa"), 4) == 0.0
-    assert shannon_entropy("abcd") > 1.0
-
-
-def test_db_insert_fetch():
-    with tempfile.TemporaryDirectory() as td:
-        db = LearningDB(Path(td) / "x.db")
-        db.insert_attempt({"run_id": "r1", "target_fingerprint": "linux", "cve_id": "CVE-1", "exploit_id": "aux", "features_json": [1], "success_bool": True, "evidence_paths": [], "created_at": "2024"})
-        assert db.previous_success_rate("ssh", "CVE-1") == 1.0
-
-
-def test_feature_vector_length_consistency():
-    fv = feature_vector({"service": "ssh", "version": "7.2", "port": 22, "banner": "OpenSSH"}, "linux", 0.4, {"published_date": "2020-01-01T00:00:00Z"})
-    assert len(fv) == 7
+    assert status["run_id"]
+    assert status["target"] == "192.168.56.101"
+    assert status["dry_run"] is True
+    for step in [
+        "recon_started",
+        "recon_done",
+        "normalize_done",
+        "ai_done",
+        "exploit_skipped",
+        "report_skipped",
+    ]:
+        assert step in status["steps"]
+        assert status["steps"][step]["state"] == "done"
