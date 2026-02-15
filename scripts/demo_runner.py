@@ -36,6 +36,7 @@ def main() -> None:
 
     print("Run completed.")
     print(f"Run folder: {result['run_dir']}")
+    print(f"Normalized scan JSON: {result['scan_json_path']}")
 
 
 if __name__ == "__main__":

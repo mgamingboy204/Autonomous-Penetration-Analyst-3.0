@@ -1,42 +1,57 @@
-import json
 import shutil
 import subprocess
+from pathlib import Path
+from typing import Any
 
 
-def _run_tool(cmd, output_path):
-    try:
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
-        output_path.write_text(result.stdout + "\n" + result.stderr)
-        return {"cmd": " ".join(cmd), "returncode": result.returncode, "output": str(output_path)}
-    except Exception as exc:
-        output_path.write_text(f"tool failure: {exc}\n")
-        return {"cmd": " ".join(cmd), "returncode": -1, "error": str(exc), "output": str(output_path)}
+def run_nmap(target: str, out_dir: Path, logger) -> dict[str, Any]:
+    out_dir.mkdir(parents=True, exist_ok=True)
 
+    xml_path = out_dir / "nmap.xml"
+    txt_path = out_dir / "nmap.txt"
+    run_log_path = out_dir / "nmap_run.log"
 
-def run_recon(target, run_ctx):
-    run_ctx.raw_dir.mkdir(parents=True, exist_ok=True)
-    findings = {"target": target, "tools": []}
-    nmap_xml = run_ctx.raw_dir / "nmap.xml"
+    if not shutil.which("nmap"):
+        message = "nmap binary not found. Install nmap on Kali and ensure it is on PATH."
+        run_log_path.write_text(message + "\n", encoding="utf-8")
+        logger.error(message)
+        return {
+            "target": target,
+            "xml_path": str(xml_path),
+            "txt_path": str(txt_path),
+            "run_log_path": str(run_log_path),
+            "returncode": 127,
+            "error": message,
+        }
 
-    if shutil.which("nmap"):
-        cmd = ["nmap", "-sV", "-O", "--top-ports", "200", "-T3", "-oX", str(nmap_xml), "-oN", str(run_ctx.raw_dir / "nmap.txt"), target]
-        findings["tools"].append(_run_tool(cmd, run_ctx.raw_dir / "nmap_exec.log"))
-    else:
-        (run_ctx.raw_dir / "nmap_exec.log").write_text("nmap missing\n")
-        findings["tools"].append({"cmd": "nmap", "returncode": -1, "error": "nmap missing"})
+    cmd = [
+        "nmap",
+        "-sS",
+        "-sV",
+        "-O",
+        "-oX",
+        str(xml_path),
+        "-oN",
+        str(txt_path),
+        target,
+    ]
 
-    optional = {
-        "whatweb": ["whatweb", f"http://{target}"],
-        "naabu": ["naabu", "-host", target],
-        "amass": ["amass", "intel", "-active", "-addr", target],
-        "httprobe": ["httprobe"],
+    logger.info("Running nmap scan: %s", " ".join(cmd))
+    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    run_log_path.write_text((result.stdout or "") + "\n" + (result.stderr or ""), encoding="utf-8")
+
+    scan_result: dict[str, Any] = {
+        "target": target,
+        "xml_path": str(xml_path),
+        "txt_path": str(txt_path),
+        "run_log_path": str(run_log_path),
+        "returncode": result.returncode,
     }
-    for tool, cmd in optional.items():
-        if shutil.which(tool):
-            findings["tools"].append(_run_tool(cmd, run_ctx.raw_dir / f"{tool}.log"))
-        else:
-            (run_ctx.raw_dir / f"{tool}.log").write_text(f"{tool} missing (optional)\n")
-            findings["tools"].append({"cmd": tool, "returncode": -1, "error": "optional tool missing"})
+    if result.returncode != 0:
+        err = f"nmap exited with non-zero status {result.returncode}. See {run_log_path}"
+        logger.error(err)
+        scan_result["error"] = err
+    else:
+        logger.info("nmap scan completed successfully")
 
-    (run_ctx.raw_dir / "recon_summary.json").write_text(json.dumps(findings, indent=2))
-    return {"nmap_xml": str(nmap_xml), "summary": findings}
+    return scan_result
