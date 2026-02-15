@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>{{ title }}</title></head>
+<body>
+<h1>{{ title }}</h1>
+<p><b>Run ID:</b> {{ run_id }}</p>
+<p><b>Target:</b> {{ target }}</p>
+<h2>Scope & Whitelist Proof</h2>
+<pre>{{ whitelist }}</pre>
+<h2>Recon Summary</h2>
+<pre>{{ normalized | tojson(indent=2) }}</pre>
+<h2>Mapped CVEs</h2>
+<table border="1"><tr><th>CVE</th><th>CVSS</th><th>Description</th></tr>
+{% for m in mapped %}<tr><td>{{m.cve_id}}</td><td>{{m.cvss}}</td><td>{{m.description}}</td></tr>{% endfor %}
+</table>
+<h2>AI Ranking</h2>
+<table border="1"><tr><th>CVE</th><th>Probability</th><th>Reasoning</th></tr>
+{% for r in ranked %}<tr><td>{{r.cve_id}}</td><td>{{r.success_probability}}</td><td>{{r.reasoning}}</td></tr>{% endfor %}
+</table>
+<h2>Actions Taken</h2>
+<p>dry_run={{ dry_run }}, full_run_enabled={{ full_run_enabled }}</p>
+<pre>{{ action | tojson(indent=2) }}</pre>
+<h2>Evidence</h2>
+<ul>{% for e in evidence %}<li>{{e.path}} - {{e.sha256}}</li>{% endfor %}</ul>
+</body>
+</html>
