@@ -33,6 +33,22 @@ class RpcDecodeError(RpcClientError):
     """RPC payload decode failure."""
 
 
+def _to_text(x: Any) -> Any:
+    if isinstance(x, bytes):
+        return x.decode("utf-8", errors="replace")
+    return x
+
+
+def _normalize(obj: Any) -> Any:
+    if isinstance(obj, dict):
+        return {_to_text(k): _normalize(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_normalize(v) for v in obj]
+    if isinstance(obj, tuple):
+        return tuple(_normalize(v) for v in obj)
+    return _to_text(obj)
+
+
 @dataclass
 class ProbeResult:
     scheme: str
@@ -76,16 +92,20 @@ class MsfRpcClient:
         try:
             if "binary/message-pack" in lowered or "application/msgpack" in lowered:
                 decoded = msgpack.unpackb(body, raw=False)
+                decoded = _normalize(decoded)
                 return decoded if isinstance(decoded, dict) else {"result": decoded}
             if "application/json" in lowered or "text/json" in lowered:
                 parsed = json.loads(body.decode("utf-8", errors="replace"))
+                parsed = _normalize(parsed)
                 return parsed if isinstance(parsed, dict) else {"result": parsed}
 
             try:
                 decoded = msgpack.unpackb(body, raw=False)
+                decoded = _normalize(decoded)
                 return decoded if isinstance(decoded, dict) else {"result": decoded}
             except Exception:
                 parsed = json.loads(body.decode("utf-8", errors="replace"))
+                parsed = _normalize(parsed)
                 return parsed if isinstance(parsed, dict) else {"result": parsed}
         except Exception as exc:
             raise RpcDecodeError(
@@ -181,16 +201,20 @@ class MsfRpcClient:
                 decoded = response["decoded"] or {}
                 if decoded.get("error") == "Invalid Message Format":
                     raise RpcClientError("your request format is wrong")
-                if decoded.get("result") == "success" and decoded.get("token"):
+                result = decoded.get("result")
+                token = decoded.get("token")
+                if result == "success" and token:
                     self.scheme = scheme
                     self.base_url = self._build_url(scheme)
-                    self.token = str(decoded["token"])
+                    self.token = str(token)
                     return ProbeResult(
                         scheme=scheme,
                         base_url=self.base_url,
                         token=self.token,
                         decoded_login_response=decoded,
                     )
+                if result != "success" or not token:
+                    raise RpcAuthError(f"unexpected login response: {decoded}")
                 if decoded.get("error") == "Login failed" or response.get("status") in {401, 403}:
                     raise RpcAuthError(f"auth failed: {decoded}")
                 raise RpcClientError(f"unexpected login response: {decoded}")
