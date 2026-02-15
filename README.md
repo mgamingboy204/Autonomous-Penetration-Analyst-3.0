@@ -61,3 +61,16 @@ Each run creates:
 - `runs/<run_id>/logs/app.log`
 - `runs/<run_id>/report/`
 - `runs/<run_id>/status.json`
+
+## RUN (Lab-safe Metasploit validation)
+
+- Start dashboard:
+  - `python src/dashboard/app.py`
+- Dry-run demo:
+  - `python scripts/demo_runner.py --target 192.168.56.101 --dry-run`
+- Full-run demo (validation only):
+  - Enable `enable_exploit_engine` and set `full_run_token` in `config/settings.json`.
+  - `python src/orchestrator.py --target 192.168.56.101 --dry-run false --full-run --confirm-token <token>`
+
+The full run executes only `auxiliary/scanner/*` Metasploit modules and stores output in `runs/<run_id>/raw/msf_validation.log` plus SHA-256 evidence entries in `runs/<run_id>/report/evidence.json`.
+

@@ -281,6 +281,8 @@ def run_pipeline(
                 },
             )
         status_data["artifacts"]["safe_validation_evidence"] = validation_result.get("evidence_files", [])
+        if validation_result.get("evidence_files"):
+            status_data["artifacts"]["msf_validation_log"] = validation_result["evidence_files"][0]
         print("[pipeline] exploit_done")
         update_step(
             status_path,
