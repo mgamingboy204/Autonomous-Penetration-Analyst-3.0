@@ -1,5 +1,7 @@
 import json
 import sys
+
+import pytest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -115,3 +117,21 @@ def test_normalizer_parses_ports_from_embedded_nmap_xml(tmp_path: Path):
     assert normalized["ports"][0]["service"] == "ssh"
     assert normalized["ports"][1]["port"] == 80
     assert normalized["ports"][1]["service"] == "http"
+
+
+def test_full_run_without_token_is_refused(tmp_path: Path):
+    (tmp_path / "config").mkdir()
+    (tmp_path / "config" / "whitelist.txt").write_text("192.168.56.0/24\n", encoding="utf-8")
+    (tmp_path / "config" / "settings.json").write_text(
+        json.dumps(
+            {
+                "enable_exploit_engine": True,
+                "full_run_token": "VALID_TOKEN",
+                "lab_network_cidrs": ["192.168.56.0/24"],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="Full run denied"):
+        run_pipeline(target="192.168.56.101", root=tmp_path, dry_run=False, full_run=True, confirm_token=None)
