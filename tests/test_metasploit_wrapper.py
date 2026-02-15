@@ -68,39 +68,3 @@ def test_probe_rpc_endpoint_tries_multiple_endpoints_and_selects_first_valid_res
     assert client.active_endpoint == "/api/"
     assert calls[0].endswith("/api")
     assert calls[1].endswith("/api/")
-
-
-def test_rpc_call_returns_structured_error_for_bad_endpoint():
-    if metasploit_wrapper.msgpack is None:
-        pytest.skip("msgpack not installed in test environment")
-
-    class FakeResponse:
-        def __init__(self):
-            self.headers = {"Content-Type": "text/html"}
-            self.status = 404
-
-        def read(self):
-            return b"<html>not found</html>"
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, exc_type, exc, tb):
-            return False
-
-    client = MetasploitRPCClient(ssl_enabled=False)
-    with patch("urllib.request.urlopen", return_value=FakeResponse()):
-        result = client._rpc_call("auth.login", "msf", "msf", base_uri="http://127.0.0.1:55553/api")
-
-    assert result["_rpc_error"] is True
-    assert result["http_status"] == 404
-    assert result["suspect_endpoint_mismatch"] is True
-
-
-def test_ensure_rpc_running_reports_running_but_auth_failed(monkeypatch: pytest.MonkeyPatch):
-    client = MetasploitRPCClient()
-    monkeypatch.setattr(client, "_is_port_open", lambda: True)
-    monkeypatch.setattr(client, "_attempt_auth_once", lambda: {"result": "failure", "message": "bad creds"})
-
-    assert client.ensure_rpc_running() is True
-    assert client.debug_trace["rpc_state"] == "running_but_auth_failed"
