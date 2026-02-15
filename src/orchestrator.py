@@ -287,18 +287,38 @@ def run_pipeline(
             }
             logger.info("Safe validation skipped: %s", selected.reason)
         else:
-            client = MetasploitRPCClient()
+            if hasattr(MetasploitRPCClient, "from_config"):
+                client = MetasploitRPCClient.from_config(root / "config" / "settings.json")
+            else:  # pragma: no cover - test doubles
+                client = MetasploitRPCClient()
+
+            smoke_result: dict[str, Any] | None = None
             try:
+                if hasattr(client, "smoke_test"):
+                    smoke_result = client.smoke_test()
                 validation_result = client.run_aux_module(selected.module_name, selected.options)
             finally:
                 client.stop_rpc()
 
             log_path = run_ctx.raw_dir / "msf_validation.log"
             write_validation_log(log_path, selected.module_name, selected.options, validation_result)
+            debug_path = run_ctx.raw_dir / "msf_rpc_debug.json"
+            debug_payload = dict(getattr(client, "debug_trace", {}))
+            if smoke_result is not None:
+                debug_payload["smoke_test"] = {
+                    "scheme": smoke_result.get("scheme"),
+                    "endpoint": smoke_result.get("endpoint"),
+                    "host": smoke_result.get("host"),
+                    "port": smoke_result.get("port"),
+                    "auth_result": smoke_result.get("auth_result"),
+                }
+            debug_path.write_text(json.dumps(debug_payload, indent=2), encoding="utf-8")
+
             validation_result["module"] = selected.module_name
             validation_result["options"] = selected.options
             validation_result["evidence_files"] = [str(log_path)]
-            validation_result["artifacts"] = list(validation_result.get("artifacts", [])) + [str(log_path)]
+            validation_result["artifacts"] = list(validation_result.get("artifacts", [])) + [str(log_path), str(debug_path)]
+            status_data["artifacts"]["msf_rpc_debug_json"] = str(debug_path)
 
         for attempt in planned_attempts:
             matched = attempt["cve_id"] == str((ranked_choice or {}).get("cve_id") or "")
