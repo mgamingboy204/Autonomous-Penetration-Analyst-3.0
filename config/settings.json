@@ -1,0 +1,6 @@
+{
+  "enable_exploit_engine": false,
+  "full_run_token": "CHANGE_ME",
+  "lab_network_cidrs": ["192.168.56.0/24"],
+  "report_title": "Autonomous Penetration Analyst 3.0 Lab Report"
+}

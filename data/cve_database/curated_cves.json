@@ -1,0 +1,30 @@
+[
+  {
+    "cve_id": "CVE-2011-2523",
+    "service_keys": ["vsftpd", "2.3.4", "ftp"],
+    "description": "vsftpd 2.3.4 backdoor vulnerability (lab-reference only)",
+    "cvss": 10.0,
+    "published_date": "2011-07-03T00:00:00Z"
+  },
+  {
+    "cve_id": "CVE-2007-2447",
+    "service_keys": ["samba", "smb", "usermap"],
+    "description": "Samba username map script command execution (lab-reference only)",
+    "cvss": 9.3,
+    "published_date": "2007-05-14T00:00:00Z"
+  },
+  {
+    "cve_id": "CVE-2017-12617",
+    "service_keys": ["tomcat", "apache tomcat", "jsp"],
+    "description": "Apache Tomcat JSP upload handling issue",
+    "cvss": 7.5,
+    "published_date": "2017-09-19T00:00:00Z"
+  },
+  {
+    "cve_id": "CVE-2014-0160",
+    "service_keys": ["openssl", "https", "heartbleed"],
+    "description": "OpenSSL TLS heartbeat information disclosure",
+    "cvss": 7.5,
+    "published_date": "2014-04-07T00:00:00Z"
+  }
+]
