@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from src.ai_brain.cve_mapper import map_scan_to_cves
 from src.recon_engine.normalizer import normalize_nmap_xml
 from src.recon_engine.scanner import run_nmap
 
@@ -154,8 +155,18 @@ def run_pipeline(
         details={"scan_json": str(scan_json_path), "open_ports": len(normalized["ports"])},
     )
 
+    cves_json_path = paths["normalized"] / "cves.json"
+    cve_matches = map_scan_to_cves(normalized)
+    cves_json_path.write_text(json.dumps(cve_matches, indent=2), encoding="utf-8")
+    status_data["artifacts"]["cves_json"] = str(cves_json_path)
     print("[pipeline] ai_done")
-    update_step(status_path, status_data, "ai_done", logger, details={"note": "AI phase not implemented in Phase 1"})
+    update_step(
+        status_path,
+        status_data,
+        "ai_done",
+        logger,
+        details={"cves_json": str(cves_json_path), "candidate_count": len(cve_matches)},
+    )
 
     exploit_note = "Dry run enabled; exploit step skipped" if dry_run else "Exploit phase not implemented in Phase 1"
     print("[pipeline] exploit_skipped")
@@ -172,6 +183,7 @@ def run_pipeline(
         "status_path": str(status_path),
         "log_path": str(paths["logs"] / "app.log"),
         "scan_json_path": str(scan_json_path),
+        "cves_json_path": str(cves_json_path),
     }
 
 
