@@ -10,6 +10,7 @@ from typing import Any
 
 from src.ai_brain.cve_mapper import map_scan_to_cves
 from src.ai_brain.ml_predictor import predict_and_rank
+from src.learning_db.database import LearningDB
 from src.recon_engine.normalizer import normalize_nmap_xml
 from src.recon_engine.scanner import run_nmap
 
@@ -160,12 +161,36 @@ def run_pipeline(
     cve_matches = map_scan_to_cves(normalized)
     cves_json_path.write_text(json.dumps(cve_matches, indent=2), encoding="utf-8")
 
+    learning_db = LearningDB(root / "data" / "learning.db")
     ranked_json_path = paths["normalized"] / "ranked.json"
-    ranked_candidates = predict_and_rank(normalized, cve_matches)
+    ranked_candidates = predict_and_rank(normalized, cve_matches, db=learning_db)
     ranked_json_path.write_text(json.dumps(ranked_candidates, indent=2), encoding="utf-8")
+
+    planned_attempts: list[dict[str, Any]] = []
+    planned_success = 0 if dry_run else None
+    for candidate in ranked_candidates:
+        matched_service = candidate.get("matched_service", {})
+        service = str(matched_service.get("service") or "unknown")
+        cve_id = str(candidate.get("cve_id") or "")
+        attempt_id = learning_db.record_attempt(
+            run_id=run_id,
+            target=target,
+            service=service,
+            cve_id=cve_id,
+            features={
+                "prob": candidate.get("prob"),
+                "utility": candidate.get("utility"),
+                "cvss": candidate.get("cvss"),
+                "matched_service": matched_service,
+            },
+            success=planned_success,
+            evidence={"state": "planned", "dry_run": dry_run},
+        )
+        planned_attempts.append({"attempt_id": attempt_id, "service": service, "cve_id": cve_id})
 
     status_data["artifacts"]["cves_json"] = str(cves_json_path)
     status_data["artifacts"]["ranked_json"] = str(ranked_json_path)
+    status_data["artifacts"]["learning_db"] = str(root / "data" / "learning.db")
     print("[pipeline] ai_done")
     update_step(
         status_path,
@@ -177,10 +202,21 @@ def run_pipeline(
             "ranked_json": str(ranked_json_path),
             "candidate_count": len(cve_matches),
             "ranked_count": len(ranked_candidates),
+            "planned_attempt_count": len(planned_attempts),
         },
     )
 
-    exploit_note = "Dry run enabled; exploit step skipped" if dry_run else "Exploit phase not implemented in Phase 1"
+    if dry_run:
+        exploit_note = "Dry run enabled; exploit step skipped"
+    else:
+        for attempt in planned_attempts:
+            learning_db.update_attempt(
+                attempt["attempt_id"],
+                success=0,
+                evidence={"state": "skipped", "reason": "Exploit phase not implemented"},
+            )
+        exploit_note = "Exploit phase not implemented in Phase 1"
+
     print("[pipeline] exploit_skipped")
     update_step(status_path, status_data, "exploit_skipped", logger, details={"note": exploit_note})
 

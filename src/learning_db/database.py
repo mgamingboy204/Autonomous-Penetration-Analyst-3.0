@@ -1,58 +1,129 @@
 import json
 import sqlite3
+import uuid
+from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
+
+ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_DB_PATH = ROOT / "data" / "learning.db"
 
 
-class LearningDB:
-    def __init__(self, db_path):
-        self.db_path = Path(db_path)
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        self.conn = sqlite3.connect(self.db_path)
-        self._init_schema()
+def _get_connection(db_path: str | Path = DEFAULT_DB_PATH) -> sqlite3.Connection:
+    path = Path(db_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return sqlite3.connect(path)
 
-    def _init_schema(self):
-        self.conn.execute(
+
+def init_db(db_path: str | Path = DEFAULT_DB_PATH) -> None:
+    with _get_connection(db_path) as conn:
+        conn.execute(
             """
             CREATE TABLE IF NOT EXISTS attempts (
-                attempt_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                attempt_id TEXT PRIMARY KEY,
                 run_id TEXT,
-                target_fingerprint TEXT,
+                target TEXT,
+                service TEXT,
                 cve_id TEXT,
-                exploit_id TEXT,
                 features_json TEXT,
-                success_bool INTEGER,
-                evidence_paths TEXT,
+                success INTEGER,
+                evidence_json TEXT,
                 created_at TEXT
             )
             """
         )
-        self.conn.commit()
+        conn.commit()
 
-    def insert_attempt(self, record):
-        self.conn.execute(
+
+def record_attempt(
+    *,
+    run_id: str,
+    target: str,
+    service: str,
+    cve_id: str,
+    features: dict[str, Any] | None = None,
+    success: int | None = None,
+    evidence: dict[str, Any] | list[Any] | None = None,
+    attempt_id: str | None = None,
+    created_at: str | None = None,
+    db_path: str | Path = DEFAULT_DB_PATH,
+) -> str:
+    init_db(db_path)
+    attempt_id = attempt_id or str(uuid.uuid4())
+    created_at = created_at or datetime.now(timezone.utc).isoformat()
+
+    with _get_connection(db_path) as conn:
+        conn.execute(
             """
-            INSERT INTO attempts(run_id,target_fingerprint,cve_id,exploit_id,features_json,success_bool,evidence_paths,created_at)
-            VALUES(?,?,?,?,?,?,?,?)
+            INSERT OR REPLACE INTO attempts(
+                attempt_id, run_id, target, service, cve_id, features_json, success, evidence_json, created_at
+            ) VALUES(?,?,?,?,?,?,?,?,?)
             """,
             (
-                record.get("run_id"),
-                record.get("target_fingerprint"),
-                record.get("cve_id"),
-                record.get("exploit_id"),
-                json.dumps(record.get("features_json", {})),
-                1 if record.get("success_bool") else 0,
-                json.dumps(record.get("evidence_paths", [])),
-                record.get("created_at"),
+                attempt_id,
+                run_id,
+                target,
+                service,
+                cve_id,
+                json.dumps(features or {}),
+                success,
+                json.dumps(evidence or {}),
+                created_at,
             ),
         )
-        self.conn.commit()
+        conn.commit()
 
-    def previous_success_rate(self, service, cve_id):
-        rows = self.conn.execute("SELECT success_bool FROM attempts WHERE cve_id=?", (cve_id,)).fetchall()
-        if not rows:
-            return 0.0
-        return sum(r[0] for r in rows) / len(rows)
+    return attempt_id
 
-    def list_runs(self):
-        rows = self.conn.execute("SELECT run_id, cve_id, success_bool, created_at FROM attempts ORDER BY attempt_id DESC").fetchall()
-        return [dict(run_id=r[0], cve_id=r[1], success=bool(r[2]), created_at=r[3]) for r in rows]
+
+def get_success_rate(service: str, cve_id: str, db_path: str | Path = DEFAULT_DB_PATH) -> float:
+    init_db(db_path)
+    with _get_connection(db_path) as conn:
+        rows = conn.execute(
+            """
+            SELECT success
+            FROM attempts
+            WHERE service = ? AND cve_id = ? AND success IS NOT NULL
+            """,
+            (service, cve_id),
+        ).fetchall()
+
+    if not rows:
+        return 0.0
+    successes = sum(int(row[0]) for row in rows)
+    return successes / len(rows)
+
+
+def update_attempt(
+    attempt_id: str,
+    *,
+    success: int | None,
+    evidence: dict[str, Any] | list[Any] | None = None,
+    db_path: str | Path = DEFAULT_DB_PATH,
+) -> None:
+    init_db(db_path)
+    with _get_connection(db_path) as conn:
+        conn.execute(
+            """
+            UPDATE attempts
+            SET success = ?, evidence_json = ?
+            WHERE attempt_id = ?
+            """,
+            (success, json.dumps(evidence or {}), attempt_id),
+        )
+        conn.commit()
+
+
+class LearningDB:
+    def __init__(self, db_path: str | Path = DEFAULT_DB_PATH):
+        self.db_path = Path(db_path)
+        init_db(self.db_path)
+
+    def previous_success_rate(self, service: str, cve_id: str) -> float:
+        return get_success_rate(service, cve_id, db_path=self.db_path)
+
+    def record_attempt(self, **kwargs: Any) -> str:
+        return record_attempt(db_path=self.db_path, **kwargs)
+
+    def update_attempt(self, attempt_id: str, *, success: int | None, evidence: Any = None) -> None:
+        update_attempt(attempt_id, success=success, evidence=evidence, db_path=self.db_path)
