@@ -1,26 +1,211 @@
 <!doctype html>
-<html>
-<head><meta charset="utf-8"><title>{{ title }}</title></head>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }}</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --border: #e5e7eb;
+      --ok: #065f46;
+    }
+    body {
+      margin: 0;
+      font-family: "Inter", "Segoe UI", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 28px auto;
+      padding: 0 18px 24px;
+    }
+    .header {
+      background: linear-gradient(135deg, #1e3a8a, #2563eb);
+      color: white;
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, .18);
+    }
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+      font-size: .95rem;
+    }
+    .section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-top: 16px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.04);
+    }
+    h1, h2, h3 { margin: 0 0 10px; }
+    h2 { font-size: 1.1rem; color: #111827; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: .92rem;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #f9fafb;
+      color: #111827;
+      font-weight: 600;
+    }
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .9rem;
+      white-space: pre-wrap;
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+    }
+    .small { color: var(--muted); font-size: .88rem; }
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: .8rem;
+      background: #dbeafe;
+      color: #1e3a8a;
+      margin-right: 6px;
+    }
+    .ok { color: var(--ok); font-weight: 600; }
+    ul { margin: 8px 0 0 20px; padding: 0; }
+  </style>
+</head>
 <body>
-<h1>{{ title }}</h1>
-<p><b>Run ID:</b> {{ run_id }}</p>
-<p><b>Target:</b> {{ target }}</p>
-<h2>Scope & Whitelist Proof</h2>
-<pre>{{ whitelist }}</pre>
-<h2>Recon Summary</h2>
-<pre>{{ normalized | tojson(indent=2) }}</pre>
-<h2>Mapped CVEs</h2>
-<table border="1"><tr><th>CVE</th><th>CVSS</th><th>Description</th></tr>
-{% for m in mapped %}<tr><td>{{m.cve_id}}</td><td>{{m.cvss}}</td><td>{{m.description}}</td></tr>{% endfor %}
-</table>
-<h2>AI Ranking</h2>
-<table border="1"><tr><th>CVE</th><th>Probability</th><th>Reasoning</th></tr>
-{% for r in ranked %}<tr><td>{{r.cve_id}}</td><td>{{r.success_probability}}</td><td>{{r.reasoning}}</td></tr>{% endfor %}
-</table>
-<h2>Actions Taken</h2>
-<p>dry_run={{ dry_run }}, full_run_enabled={{ full_run_enabled }}</p>
-<pre>{{ action | tojson(indent=2) }}</pre>
-<h2>Evidence</h2>
-<ul>{% for e in evidence %}<li>{{e.path}} - {{e.sha256}}</li>{% endfor %}</ul>
+  <main class="container">
+    <section class="header">
+      <h1>{{ title }}</h1>
+      <p class="small">Automated security assessment summary for controlled, whitelisted operations.</p>
+      <div class="meta">
+        <div><strong>Run ID:</strong> {{ run_id }}</div>
+        <div><strong>Target:</strong> {{ target }}</div>
+        <div><strong>Generated:</strong> {{ generated_at }}</div>
+        <div><strong>Mode:</strong> {% if dry_run %}Dry-run{% else %}Active validation{% endif %}</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Scope + whitelist proof</h2>
+      <p><span class="badge">Target in whitelist</span> <span class="ok">{{ whitelist_match }}</span></p>
+      <div class="mono">{{ whitelist_entries }}</div>
+    </section>
+
+    <section class="section">
+      <h2>Recon summary (ports/services)</h2>
+      <p class="small">Open service inventory extracted from normalized reconnaissance output.</p>
+      <table>
+        <thead><tr><th>Port</th><th>Protocol</th><th>Service</th><th>Version</th></tr></thead>
+        <tbody>
+          {% for svc in recon_services %}
+          <tr>
+            <td>{{ svc.port }}</td>
+            <td>{{ svc.protocol }}</td>
+            <td>{{ svc.service }}</td>
+            <td>{{ svc.version }}</td>
+          </tr>
+          {% endfor %}
+          {% if not recon_services %}
+          <tr><td colspan="4">No open services captured.</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>CVE mapping table</h2>
+      <table>
+        <thead><tr><th>CVE</th><th>Service</th><th>Port</th><th>CVSS</th><th>Description</th></tr></thead>
+        <tbody>
+          {% for m in mapped %}
+          <tr>
+            <td>{{ m.cve_id }}</td>
+            <td>{{ m.service }}</td>
+            <td>{{ m.port }}</td>
+            <td>{{ m.cvss }}</td>
+            <td>{{ m.description }}</td>
+          </tr>
+          {% endfor %}
+          {% if not mapped %}
+          <tr><td colspan="5">No mapped CVEs.</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>AI ranking table</h2>
+      <table>
+        <thead><tr><th>CVE</th><th>Probability</th><th>Utility</th><th>Reasoning</th></tr></thead>
+        <tbody>
+          {% for r in ranked %}
+          <tr>
+            <td>{{ r.cve_id }}</td>
+            <td>{{ r.prob }}</td>
+            <td>{{ r.utility }}</td>
+            <td>{{ r.reasoning }}</td>
+          </tr>
+          {% endfor %}
+          {% if not ranked %}
+          <tr><td colspan="4">No ranked candidates available.</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>Actions (dry-run/full-run)</h2>
+      <p><strong>Dry-run:</strong> {{ dry_run }} &nbsp; | &nbsp; <strong>Full-run:</strong> {{ full_run }}</p>
+      <div class="mono">{{ action_details }}</div>
+    </section>
+
+    <section class="section">
+      <h2>Evidence manifest (file hashes)</h2>
+      <table>
+        <thead><tr><th>File</th><th>SHA256</th><th>Timestamp</th></tr></thead>
+        <tbody>
+          {% for e in evidence_files %}
+          <tr>
+            <td>{{ e.path }}</td>
+            <td class="mono">{{ e.sha256 }}</td>
+            <td>{{ e.timestamp }}</td>
+          </tr>
+          {% endfor %}
+          {% if not evidence_files %}
+          <tr><td colspan="3">No evidence manifest found for this run.</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>Remediation notes (generic)</h2>
+      <ul>
+        <li>Prioritize patching high-CVSS vulnerabilities on internet-facing services.</li>
+        <li>Restrict exposed ports to trusted management networks wherever possible.</li>
+        <li>Harden service configurations and disable unused protocols/features.</li>
+        <li>Enable centralized logging, file-integrity monitoring, and routine vulnerability scans.</li>
+        <li>Validate mitigations with repeatable dry-run and controlled full-run exercises.</li>
+      </ul>
+    </section>
+  </main>
 </body>
 </html>

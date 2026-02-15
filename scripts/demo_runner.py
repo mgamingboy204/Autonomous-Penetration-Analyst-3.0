@@ -7,6 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from src.orchestrator import run_pipeline
+from src.reporting.report_generator import build_report
 
 
 def main() -> None:
@@ -34,9 +35,12 @@ def main() -> None:
         confirm_token=args.confirm_token,
     )
 
+    report_path = build_report(result["run_id"], root=ROOT)
+
     print("Run completed.")
     print(f"Run folder: {result['run_dir']}")
     print(f"Normalized scan JSON: {result['scan_json_path']}")
+    print(f"Open report at {report_path}")
 
 
 if __name__ == "__main__":
