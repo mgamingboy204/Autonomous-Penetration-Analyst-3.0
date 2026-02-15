@@ -64,13 +64,25 @@ Each run creates:
 
 ## RUN (Lab-safe Metasploit validation)
 
-- Start dashboard:
-  - `python src/dashboard/app.py`
-- Dry-run demo:
-  - `python scripts/demo_runner.py --target 192.168.56.101 --dry-run`
-- Full-run demo (validation only):
-  - Enable `enable_exploit_engine` and set `full_run_token` in `config/settings.json`.
-  - `python src/orchestrator.py --target 192.168.56.101 --dry-run false --full-run --confirm-token <token>`
+Start Metasploit RPC:
+
+```bash
+msfrpcd -P DEMO_PASS -S -a 127.0.0.1
+```
+
+Perform safe validation:
+
+```bash
+python3 scripts/demo_runner.py \
+  --target 192.168.224.129 \
+  --full-run \
+  --confirm-token DEMO123
+```
+
+View the report:
+
+```bash
+xdg-open runs/<run_id>/report/report.html
+```
 
 The full run executes only `auxiliary/scanner/*` Metasploit modules and stores output in `runs/<run_id>/raw/msf_validation.log` plus SHA-256 evidence entries in `runs/<run_id>/report/evidence.json`.
-
